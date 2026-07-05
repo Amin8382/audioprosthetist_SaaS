@@ -1,0 +1,9 @@
+package com.audiosoin.fournisseur;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
+import java.util.UUID;
+
+public interface BonCommandeRepository extends JpaRepository<BonCommande, UUID> {
+    List<BonCommande> findByFournisseurIdOrderByDateCommandeDesc(UUID fournisseurId);
+}
