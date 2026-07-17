@@ -66,3 +66,6 @@ docker-compose.override.yml
 
 # --- Archive old codebase (kept for reference, not built) ---
 # archive/ is tracked intentionally
+archive/backend/target/
+archive/frontend/node_modules/
+archive/frontend/dist/
