@@ -1,0 +1,84 @@
+{%- set doc = frappe.get_doc("Delivery Note", docname) -%}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>{{ doc.name }}</title>
+<style>
+@page { margin: 15mm; size: A4; }
+body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10pt; color: #333; }
+.header { text-align: center; border-bottom: 2px solid #1a56db; padding-bottom: 10px; margin-bottom: 20px; }
+.header h1 { color: #1a56db; margin: 0; font-size: 18pt; }
+.header p { margin: 2px 0; font-size: 9pt; color: #666; }
+.info-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+.info-table td { padding: 4px 8px; vertical-align: top; }
+.info-table td:first-child { font-weight: bold; width: 150px; }
+.items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+.items-table th { background: #1a56db; color: white; padding: 8px; text-align: left; font-size: 9pt; }
+.items-table td { padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 9pt; }
+.items-table tr:nth-child(even) { background: #f9fafb; }
+.totals { float: right; width: 300px; }
+.totals table { width: 100%; }
+.totals td { padding: 4px 8px; font-size: 10pt; }
+.totals .grand-total { font-weight: bold; font-size: 12pt; border-top: 2px solid #333; }
+.footer { text-align: center; margin-top: 40px; font-size: 8pt; color: #999; border-top: 1px solid #ddd; padding-top: 10px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>ODYIO CLINIQUE</h1>
+  <p>{{ doc.company or "Odyio Clinique" }}</p>
+  <p><strong>Bon de Livraison N&deg;: {{ doc.name }}</strong></p>
+  <p>Date: {{ frappe.utils.format_date(doc.posting_date, "dd MMMM yyyy") }}</p>
+</div>
+<table class="info-table">
+  <tr><td>Client:</td><td><strong>{{ doc.customer_name or doc.customer }}</strong></td></tr>
+  {%- if doc.address_display -%}
+  <tr><td>Adresse:</td><td>{{ doc.address_display | replace("\n", "<br>") }}</td></tr>
+  {%- endif -%}
+</table>
+<table class="items-table">
+  <thead>
+    <tr>
+      <th style="width:50%">D&eacute;signation</th>
+      <th style="width:10%">Qt&eacute;</th>
+      <th style="width:20%">Prix unitaire HT</th>
+      <th style="width:20%">Total HT</th>
+    </tr>
+  </thead>
+  <tbody>
+    {%- for item in doc.items -%}
+    <tr>
+      <td>{{ item.item_name or item.item_code }}{% if item.description and item.description != item.item_name %}<br><small>{{ item.description }}</small>{% endif %}</td>
+      <td>{{ item.qty }}</td>
+      <td>{{ frappe.format_value(item.rate, "Currency") }}</td>
+      <td>{{ frappe.format_value(item.amount, "Currency") }}</td>
+    </tr>
+    {%- endfor -%}
+  </tbody>
+</table>
+<br>
+<div class="totals">
+  <table>
+    <tr><td>Total HT:</td><td style="text-align:right">{{ frappe.format_value(doc.total, "Currency") }}</td></tr>
+    {%- for charge in doc.taxes -%}
+    <tr><td>{{ charge.description }}:</td><td style="text-align:right">{{ frappe.format_value(charge.tax_amount, "Currency") }}</td></tr>
+    {%- endfor -%}
+    <tr class="grand-total"><td>Net &agrave; payer TTC:</td><td style="text-align:right">{{ frappe.format_value(doc.grand_total, "Currency") }}</td></tr>
+  </table>
+</div>
+<div style="clear:both"></div>
+<div style="margin-top:50px;">
+  <table style="width:100%">
+    <tr>
+      <td style="text-align:center"><br><br><hr style="width:200px"><small>Cachet et signature du client</small></td>
+      <td style="text-align:center"><br><br><hr style="width:200px"><small>Cachet et signature du prestataire</small></td>
+    </tr>
+  </table>
+</div>
+<div class="footer">
+  <p>Odyio Clinique - {{ doc.company_address or "" }} - TVA: {{ doc.company_tax_id or "" }}</p>
+  <p>Document g&eacute;n&eacute;r&eacute; le {{ frappe.utils.now_datetime().strftime("%d/%m/%Y %H:%M") }}</p>
+</div>
+</body>
+</html>

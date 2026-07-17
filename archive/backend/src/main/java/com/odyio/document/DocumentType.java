@@ -1,0 +1,6 @@
+package com.odyio.document;
+
+public enum DocumentType {
+    AUDIOGRAM, PRESCRIPTION, INVOICE, NATIONAL_ID, FITTING_REPORT,
+    OTHER, LOGO, PRODUCT_IMAGE, NOAH_XML, BL_FOURNISSEUR
+}

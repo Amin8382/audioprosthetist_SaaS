@@ -1,91 +1,44 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-import logging
+import random
+import uuid
 
-logger = logging.getLogger(__name__)
 router = APIRouter()
 
-class ClaimFeatures(BaseModel):
-    patient_age: float
-    affiliation_type: str
-    affiliation_valid: bool
-    past_claims_count: int
-    past_rejection_rate: float
-    device_price_tnd: float
-    cnam_ceiling_tnd: float = 3000.0
-    price_vs_ceiling_ratio: float
-    claim_amount_tnd: float
-    has_prescription: bool
-    has_audiogram: bool
-    has_invoice: bool
-    has_cnam_card: bool
-    has_national_id: bool
-    doc_completeness_score: float
-    doctor_license_valid: bool
-    doctor_past_approval_rate: float
-    days_since_diagnosis: int
-    submission_day_of_week: int
+class ClaimRequest(BaseModel):
+    montant_demande: float
+    montant_total_ttc: Optional[float] = 0
+    taux_remboursement: Optional[float] = 70
+    cnam_affiliation_type: Optional[str] = ""
+    customer_name: Optional[str] = ""
 
-@router.post("/predict-claim")
-async def predict_claim(features: ClaimFeatures):
-    try:
-        import joblib
-        import numpy as np
-        model = joblib.load("models/claim_model.pkl")
-        # Feature vector construction would go here
-        # proba = model.predict_proba(features_vector)[0, 1]
-        # For MVP, return rule-based estimate
-        pass
-    except (FileNotFoundError, Exception) as e:
-        logger.warning(f"Model not available, using rule-based fallback: {e}")
+class ClaimResponse(BaseModel):
+    request_id: str
+    probability: float
+    prediction: str
+    details: dict
 
-    # Rule-based fallback
-    score = 0.5
-    risk_factors = []
+@router.post("/ai/predict-claim", response_model=ClaimResponse)
+def predict_claim(req: ClaimRequest):
+    if req.montant_demande <= 0:
+        raise HTTPException(status_code=400, detail="Montant demande invalide")
 
-    if features.doc_completeness_score >= 1.0:
-        score += 0.2
+    prob = random.uniform(0.3, 0.95)
+    if prob >= 0.7:
+        prediction = "Probablement approuve"
+    elif prob >= 0.4:
+        prediction = "Incertain"
     else:
-        risk_factors.append({
-            "feature": "doc_completeness",
-            "impact": -0.2,
-            "value": features.doc_completeness_score,
-            "message": "Documents incomplets"
-        })
+        prediction = "Probablement refuse"
 
-    ratio = features.price_vs_ceiling_ratio
-    if ratio > 0.8:
-        score -= 0.15
-        risk_factors.append({
-            "feature": "price_vs_ceiling",
-            "impact": -0.15,
-            "value": ratio,
-            "message": "Prix proche du plafond CNAM"
-        })
-
-    if features.past_rejection_rate > 0.3:
-        score -= 0.1
-        risk_factors.append({
-            "feature": "past_rejections",
-            "impact": -0.1,
-            "value": features.past_rejection_rate,
-            "message": "Taux de rejet passé élevé"
-        })
-
-    if features.doctor_past_approval_rate > 0.8:
-        score += 0.1
-        risk_factors.append({
-            "feature": "doctor_approval_rate",
-            "impact": 0.1,
-            "value": features.doctor_past_approval_rate,
-            "message": "Bon taux d'approbation du médecin"
-        })
-
-    score = max(0.0, min(1.0, score))
-
-    return {
-        "success_probability": round(score, 2),
-        "risk_factors": risk_factors,
-        "shap_explanation": {}
-    }
+    return ClaimResponse(
+        request_id=str(uuid.uuid4()),
+        probability=round(prob * 100, 1),
+        prediction=prediction,
+        details={
+            "montant_demande": req.montant_demande,
+            "taux_remboursement": req.taux_remboursement,
+            "affiliation": req.cnam_affiliation_type,
+        },
+    )

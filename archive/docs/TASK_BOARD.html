@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audiosoin — Task Board</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #1a1a2e; padding: 2rem; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin-bottom: .25rem; }
+  .subtitle { color: #64748b; font-size: .9rem; margin-bottom: 1.5rem; }
+  .stats { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .stat { background: white; border-radius: 10px; padding: .75rem 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); flex: 1; min-width: 120px; }
+  .stat .num { font-size: 1.5rem; font-weight: 700; }
+  .stat .label { font-size: .75rem; color: #64748b; text-transform: uppercase; letter-spacing: .03em; }
+  .phase { background: white; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); overflow: hidden; }
+  .phase-header { padding: 1rem 1.25rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+  .phase-header h2 { font-size: 1.1rem; display: flex; align-items: center; gap: .5rem; }
+  .phase-header .meta { font-size: .8rem; color: #64748b; }
+  .phase-header .arrow { font-size: .8rem; color: #94a3b8; transition: transform .2s; }
+  .phase-header .arrow.open { transform: rotate(90deg); }
+  .phase-body { padding: 0 1.25rem 1rem; }
+  .phase-body.collapsed { display: none; }
+  .item { display: flex; align-items: flex-start; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid #f1f5f9; }
+  .item:last-child { border-bottom: none; }
+  .item input[type=checkbox] { margin-top: 3px; width: 16px; height: 16px; accent-color: #3b82f6; cursor: pointer; flex-shrink: 0; }
+  .item .num { font-size: .75rem; color: #94a3b8; font-weight: 600; min-width: 1.8rem; }
+  .item .text { flex: 1; font-size: .88rem; line-height: 1.4; }
+  .item .text.done { text-decoration: line-through; color: #94a3b8; }
+  .item .tag { font-size: .65rem; padding: .15rem .45rem; border-radius: 4px; font-weight: 600; flex-shrink: 0; margin-left: auto; }
+  .tag-done { background: #dcfce7; color: #166534; }
+  .tag-partial { background: #fef9c3; color: #854d0e; }
+  .tag-missing { background: #fee2e2; color: #991b1b; }
+  .tag-soon { background: #dbeafe; color: #1e40af; }
+  .bar { height: 4px; border-radius: 2px; margin-top: .75rem; background: #e2e8f0; }
+  .bar-fill { height: 100%; border-radius: 2px; transition: width .3s; }
+  .bar-fill.p1 { background: #3b82f6; }
+  .bar-fill.p2 { background: #8b5cf6; }
+  .bar-fill.p3 { background: #f59e0b; }
+  .footer { text-align: center; font-size: .75rem; color: #94a3b8; margin-top: 2rem; }
+  .search { width: 100%; padding: .65rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: .9rem; margin-bottom: 1rem; background: white; }
+  .search:focus { outline: none; border-color: #3b82f6; }
+  .header-bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .btn-reset { font-size: .78rem; padding: .4rem .8rem; border: 1px solid #e2e8f0; border-radius: 6px; background: white; cursor: pointer; color: #64748b; }
+  .btn-reset:hover { background: #f8fafc; }
+  @media (max-width: 600px) { body { padding: 1rem; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header-bar">
+    <div>
+      <h1>&#9679; Audiosoin Task Board</h1>
+      <p class="subtitle">Build progress tracker — click checkboxes to update. Saved automatically.</p>
+    </div>
+    <button class="btn-reset" onclick="resetProgress()">Reset all</button>
+  </div>
+  <div class="stats" id="stats"></div>
+  <input class="search" id="search" placeholder="Search tasks..." oninput="filterTasks()">
+
+  <div id="board"></div>
+  <div class="footer">Last saved: <span id="savedTime">—</span></div>
+</div>
+
+<script>
+const DATA = [
+  {
+    phase: "Phase 1 — Core ERP",
+    color: "p1",
+    items: [
+      { n: 1, text: "Docker Compose: all services running, health checks passing", status: "partial" },
+      { n: 2, text: "Flyway DB migrations: all tables, all constraints", status: "done" },
+      { n: 3, text: "Auto-numbering service (SELECT FOR UPDATE sequence increment)", status: "partial" },
+      { n: 4, text: "JWT auth: register, login, refresh, logout, role extraction", status: "done" },
+      { n: 5, text: "Spring Security: per-role endpoint access rules", status: "done" },
+      { n: 6, text: "Clinic Configuration module (CRUD + numbering prefixes)", status: "done" },
+      { n: 7, text: "Clients module: CRUD + search + code auto-gen CLT-XXXX", status: "done" },
+      { n: 8, text: "Fournisseurs module: CRUD + code auto-gen FRN-XXXX", status: "done" },
+      { n: 9, text: "Stock items CRUD + categories", status: "done" },
+      { n: 10, text: "Stock movement engine (all types: ENTREE/SORTIE/REPARATION/RETOUR)", status: "done" },
+      { n: 11, text: "Low-stock alert endpoint", status: "done" },
+      { n: 12, text: "BL CRUD (all types) + line items with TVA calc", status: "done" },
+      { n: 13, text: "BL confirm → triggers stock SORTIE movements", status: "done" },
+      { n: 14, text: "Bon de Commande CRUD + receive → stock ENTREE + trésorerie DEPENSE", status: "done" },
+      { n: 15, text: "Ticket réparation CRUD + status flow + stock movements", status: "done" },
+      { n: 16, text: "Facture create from BL(s) + edit + audit log", status: "done" },
+      { n: 17, text: "Paiement recording → auto-updates facture status + reste_a_payer", status: "done" },
+      { n: 18, text: "Paiement → auto-creates trésorerie RECETTE", status: "done" },
+      { n: 19, text: "Trésorerie manual entries + bilan endpoint + bordereau", status: "done" },
+      { n: 20, text: "PDF engine: BL + Facture + BC + Bordereau (iText 7)", status: "missing" },
+      { n: 21, text: "File upload/download service (multipart → local storage)", status: "missing" },
+      { n: 22, text: "Axios interceptors + React app scaffold + Zustand", status: "done" },
+      { n: 23, text: "Sidebar layout + protected routes + role-aware nav", status: "done" },
+      { n: 24, text: "All 8 ERP module UIs: Clients, BL, Facturation, Fournisseurs, Stocks, Trésorerie, Config", status: "partial" }
+    ]
+  },
+  {
+    phase: "Phase 2 — CNAM + AI + Marketplace",
+    color: "p2",
+    items: [
+      { n: 25, text: "CNAM demande lifecycle backend (all statuses)", status: "partial" },
+      { n: 26, text: "CNAM document checklist (5 required, upload tracking)", status: "partial" },
+      { n: 27, text: "CNAM status manual update + audit + notification", status: "done" },
+      { n: 28, text: "CNAM APPROUVEE → auto trésorerie RECETTE", status: "done" },
+      { n: 29, text: "FastAPI scaffold + /health endpoint + Docker", status: "missing" },
+      { n: 30, text: "OpenCV preprocess pipeline (grayscale → denoise → binarize → deskew)", status: "missing" },
+      { n: 31, text: "EasyOCR(['fr','ar']) integration", status: "missing" },
+      { n: 32, text: "Regex NER extraction (dates, CNAM numbers, prices)", status: "missing" },
+      { n: 33, text: "spaCy NER (names, device models)", status: "missing" },
+      { n: 34, text: "Claude Vision API fallback (confidence < 0.7)", status: "missing" },
+      { n: 35, text: "POST /ai/extract-document end-to-end working", status: "missing" },
+      { n: 36, text: "Rule-based claim predictor (Phase 2 cold-start)", status: "missing" },
+      { n: 37, text: "POST /ai/predict-claim with rule-based scoring", status: "missing" },
+      { n: 38, text: "CNAM PDF dossier generation (French, iText)", status: "missing" },
+      { n: 39, text: "CNAM module full UI (checklist + upload + AI display + PDF)", status: "partial" },
+      { n: 40, text: "FileUpload component showing AI extraction results inline", status: "missing" },
+      { n: 41, text: "Catalogue produits CRUD backend", status: "done" },
+      { n: 42, text: "Marketplace browse endpoint (filter by fournisseur/categorie)", status: "done" },
+      { n: 43, text: "POST /api/marketplace/commande → creates 1 BC per fournisseur", status: "done" },
+      { n: 44, text: "Marketplace UI: grid + panier + confirm flow", status: "done" },
+      { n: 45, text: "Fournisseur portal UI (catalogue management + inbound BCs)", status: "done" },
+      { n: 46, text: "Noah XML import (MVP fallback): parse + populate clients + sessions", status: "missing" }
+    ]
+  },
+  {
+    phase: "Phase 3 — ML + Noah ES",
+    color: "p3",
+    items: [
+      { n: 47, text: "Noah ES OAuth2 client (Spring Boot)", status: "missing" },
+      { n: 48, text: "POST /api/noah/sync/{clientId} — pull audiograms + sessions", status: "missing" },
+      { n: 49, text: "POST /api/noah/push/{clientId} — create/update patient in Noah ES", status: "missing" },
+      { n: 50, text: "Noah tab UI on client detail page (audiogram chart + sessions)", status: "missing" },
+      { n: 51, text: "NoahSyncButton component + sync status display", status: "missing" },
+      { n: 52, text: "Random Forest no-show predictor + calibration", status: "missing" },
+      { n: 53, text: "POST /ai/predict-noshow endpoint", status: "missing" },
+      { n: 54, text: "Celery reminder tasks (apply_async with eta)", status: "missing" },
+      { n: 55, text: "XGBoost claim model (once 100+ claims available)", status: "missing" },
+      { n: 56, text: "SHAP explainer + risk factor messages", status: "missing" },
+      { n: 57, text: "MLflow experiment tracking + model registry", status: "missing" },
+      { n: 58, text: "Retrain tasks (Celery scheduled, weekly)", status: "missing" },
+      { n: 59, text: "Isolation Forest anomaly detection", status: "missing" },
+      { n: 60, text: "In-app notification system (all status changes)", status: "missing" },
+      { n: 61, text: "SMS notifications (appointment reminders)", status: "missing" }
+    ]
+  }
+];
+
+const STORAGE_KEY = 'audiosoin_taskboard';
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      DATA.forEach((phase, pi) => {
+        phase.items.forEach((item, ii) => {
+          const val = saved[`${pi}-${ii}`];
+          if (val === 'done' || val === 'partial' || val === 'missing') {
+            item.status = val;
+          }
+        });
+      });
+    }
+  } catch(e) {}
+  if (!raw) { applyDefaults(); }
+}
+
+function applyDefaults() {
+  DATA.forEach((phase, pi) => {
+    phase.items.forEach((item, ii) => {
+      if (item.status === 'done') updateStorage(pi, ii, 'done');
+      else if (item.status === 'partial') updateStorage(pi, ii, 'partial');
+    });
+  });
+}
+
+function updateStorage(pi, ii, val) {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const obj = raw ? JSON.parse(raw) : {};
+    obj[`${pi}-${ii}`] = val;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+    document.getElementById('savedTime').textContent = new Date().toLocaleTimeString();
+  } catch(e) {}
+}
+
+function cycleStatus(pi, ii, cb) {
+  const item = DATA[pi].items[ii];
+  const order = ['missing', 'done', 'partial'];
+  const idx = order.indexOf(item.status);
+  item.status = order[(idx + 1) % order.length];
+  updateStorage(pi, ii, item.status);
+  render();
+}
+
+function render() {
+  const board = document.getElementById('board');
+  let html = '';
+  const search = (document.getElementById('search').value || '').toLowerCase();
+  let totals = { done: 0, partial: 0, missing: 0, total: 0 };
+
+  DATA.forEach((phase, pi) => {
+    let phaseDone = 0, phaseTotal = 0;
+    let itemsHtml = '';
+    phase.items.forEach((item, ii) => {
+      if (search && !item.text.toLowerCase().includes(search)) return;
+      phaseTotal++; totals.total++;
+      const checked = item.status === 'done';
+      const partial = item.status === 'partial';
+      if (item.status === 'done') { phaseDone++; totals.done++; }
+      else if (item.status === 'partial') totals.partial++;
+      else totals.missing++;
+      const cls = checked ? 'done' : '';
+      const tagMap = { done: '<span class="tag tag-done">Done</span>', partial: '<span class="tag tag-partial">Partial</span>', missing: '<span class="tag tag-missing">To do</span>' };
+      itemsHtml += `<div class="item">
+        <input type="checkbox" ${checked ? 'checked' : ''} onchange="cycleStatus(${pi},${ii},this)">
+        <span class="num">${item.n}.</span>
+        <span class="text ${cls}">${item.text}</span>
+        ${tagMap[item.status] || ''}
+      </div>`;
+    });
+    if (phaseTotal === 0) return;
+    const pct = phaseTotal ? Math.round(phaseDone / phaseTotal * 100) : 0;
+    const ls = localStorage.getItem(STORAGE_KEY);
+    const stored = ls ? JSON.parse(ls) : {};
+    const collapsed = stored[`_collapsed_${pi}`];
+    html += `<div class="phase">
+      <div class="phase-header" onclick="toggleCollapse(${pi})">
+        <h2>${phase.phase} <span class="meta">${phaseDone}/${phaseTotal} (${pct}%)</span></h2>
+        <span class="arrow ${collapsed ? '' : 'open'}">&#9654;</span>
+      </div>
+      <div class="phase-body ${collapsed ? 'collapsed' : ''}">
+        <div class="bar"><div class="bar-fill ${phase.color}" style="width:${pct}%"></div></div>
+        ${itemsHtml}
+      </div>
+    </div>`;
+  });
+
+  board.innerHTML = html;
+
+  const totalPct = totals.total ? Math.round(totals.done / totals.total * 100) : 0;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="num" style="color:#166534">${totals.done}</div><div class="label">Done</div></div>
+    <div class="stat"><div class="num" style="color:#854d0e">${totals.partial}</div><div class="label">Partial</div></div>
+    <div class="stat"><div class="num" style="color:#991b1b">${totals.missing}</div><div class="label">To do</div></div>
+    <div class="stat"><div class="num">${totalPct}%</div><div class="label">Overall progress</div></div>
+  `;
+}
+
+function toggleCollapse(pi) {
+  const ls = localStorage.getItem(STORAGE_KEY);
+  const obj = ls ? JSON.parse(ls) : {};
+  obj[`_collapsed_${pi}`] = !obj[`_collapsed_${pi}`];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+  render();
+}
+
+function filterTasks() { render(); }
+
+function resetProgress() {
+  if (!confirm('Reset all task progress? This cannot be undone.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  DATA.forEach((phase, pi) => {
+    phase.items.forEach((item, ii) => {
+      item.status = 'missing';
+    });
+  });
+  applyDefaults();
+  render();
+}
+
+load();
+render();
+</script>
+</body>
+</html>

@@ -1,34 +1,68 @@
-# Java / Maven
-target/
-*.jar
-*.war
+# ===========================
+# Odyio — Frappe/ERPNext SaaS
+# ===========================
 
-# Node
-node_modules/
+# --- Frappe Bench (do NOT commit the bench environment) ---
+odyio-bench/
+logs/
+*.log
+*.err
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
 dist/
+build/
+*.egg
+.eggs/
+venv/
+.env
 
-# IDE
+# --- Node ---
+node_modules/
+.yarn/
+yarn-error.log
+public/dist/
+public/node_modules/
+
+# --- Frappe assets (built at deploy time) ---
+**/public/dist/
+**/public/node_modules/
+
+# --- IDE ---
 .idea/
 *.iml
 .vscode/
 .project
 .classpath
 .settings/
+*.swp
+*.swo
+*~
 
-# OS
+# --- OS ---
 .DS_Store
 Thumbs.db
+Desktop.ini
 
-# Environment
+# --- Environment ---
 .env
 .env.local
+.env.*.local
 
-# Logs
-*.log
-*.err
-
-# Uploads
+# --- Uploads & temp ---
 uploads/
-
-# Temp
 *.tmp
+*.bak
+
+# --- MariaDB ---
+*.sql
+*.sql.gz
+
+# --- Docker ---
+docker-compose.override.yml
+
+# --- Archive old codebase (kept for reference, not built) ---
+# archive/ is tracked intentionally

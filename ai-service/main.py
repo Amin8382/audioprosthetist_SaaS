@@ -1,21 +1,15 @@
+import uvicorn
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from routers import extract, predict_claim, predict_noshow, anomaly
+from routers.predict_claim import router as predict_claim_router
+from routers.extract_document import router as extract_document_router
 
-app = FastAPI(title="Audiosoin AI Service", version="1.0.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.include_router(extract.router, prefix="/ai", tags=["Document Extraction"])
-app.include_router(predict_claim.router, prefix="/ai", tags=["Claim Prediction"])
-app.include_router(predict_noshow.router, prefix="/ai", tags=["No-Show Prediction"])
-app.include_router(anomaly.router, prefix="/ai", tags=["Anomaly Detection"])
+app = FastAPI(title="Odyio AI Service", version="1.0.0")
+app.include_router(predict_claim_router)
+app.include_router(extract_document_router)
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
