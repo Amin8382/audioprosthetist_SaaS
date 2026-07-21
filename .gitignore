@@ -4,6 +4,7 @@
 
 # --- Frappe Bench (do NOT commit the bench environment) ---
 odyio-bench/
+odyio-bench-pg/
 logs/
 *.log
 *.err
@@ -18,18 +19,18 @@ build/
 *.egg
 .eggs/
 venv/
-.env
 
 # --- Node ---
 node_modules/
 .yarn/
 yarn-error.log
-public/dist/
-public/node_modules/
 
 # --- Frappe assets (built at deploy time) ---
 **/public/dist/
 **/public/node_modules/
+
+# --- Frontend build ---
+odyio-frontend/dist/
 
 # --- IDE ---
 .idea/
@@ -51,6 +52,7 @@ Desktop.ini
 .env
 .env.local
 .env.*.local
+!odyio-frontend/.env.example
 
 # --- Uploads & temp ---
 uploads/
