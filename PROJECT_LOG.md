@@ -344,9 +344,43 @@ ALTER TABLE `tabSales Invoice` ADD COLUMN `custom_cnam_eligible` int(1) NOT NULL
 
 ---
 
+### 2026-07-21 — Migration from MariaDB to PostgreSQL
+
+**Why:** PostgreSQL offers superior JSONB support for audiogram data, better query performance, full-text search, and better concurrency.
+
+```
+07:03:32 PostgreSQL 16.14 installed on WSL2 Ubuntu 24.04
+07:03:45 Created odyio user + odyio_db database
+07:04:12 Initialized new bench: odyio-bench-pg (Frappe v15)
+07:05:30 Got ERPNext v15 (version-15 branch)
+07:06:40 Created site odyio.localhost with --db-type postgres
+07:07:15 Installed ERPNext on site
+07:07:30 Copied odyio_cnam + odyio_noah from old bench
+07:07:45 pip install -e (psycopg2-binary already in env)
+07:08:00 Installed odyio_cnam + odyio_noah on site
+07:08:15 Phase 1 config: Company, Fiscal Year, Item Groups, Warehouse, Role
+07:08:30 Rebuilt Odyio workspace (8 cards, 8 shortcuts, 43 links)
+07:08:45 Verified: PostgreSQL 16.14, db_type=postgres, 699 tables, 8 cards
+```
+
+**New bench:** `/home/odyio/odyio-bench-pg` (PostgreSQL)
+**Old bench:** `/home/odyio/odyio-bench` (MariaDB, can be removed)
+
+**Site config:**
+```json
+{
+  "db_name": "odyio_db",
+  "db_password": "odyio_password_here",
+  "db_type": "postgres"
+}
+```
+
+---
+
 ## Pending / Low Priority
 
 1. **Phase 3 — Marketplace**: `Catalogue Produit` DocType for B2B supplier catalog
 2. **Phase 3 — Noah ES Sync**: Bi-directional sync with Noah ES hearing aid fitting software
 3. **AI Service**: Docker Desktop needs to be started to run `ai-service/docker-compose up -d`
 4. **Hosts file**: Add `172.26.222.190 odyio.localhost` to Windows hosts file for direct browser access
+5. **Cleanup old bench**: `rm -rf /home/odyio/odyio-bench` (MariaDB bench, no longer needed)

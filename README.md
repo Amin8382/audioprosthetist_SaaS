@@ -65,7 +65,7 @@ audioprosthetist_SaaS/
 | **ERP** | ERPNext v15 | Modules standards (ventes, achats, stock, comptabilité) |
 | **Backend** | Python 3.12 | Controllers, hooks, API whitelisted |
 | **Frontend** | Frappe UI (JS + Jinja2) | Desk SPA, formulaires, listes, workspace |
-| **Base de données** | MariaDB 10.11 | Données (schéma auto-généré par les DocTypes) |
+| **Base de données** | PostgreSQL 16 | Données (JSONB pour audiogrammes, schéma auto-généré) |
 | **Cache / Queue** | Redis 7 | Cache, SocketIO, background jobs (RQ) |
 | **IA** | FastAPI (Python 3.11) | Microservice Docker — prédiction, OCR |
 | **OS** | WSL2 Ubuntu 24.04 | Environnement de développement |
@@ -140,7 +140,7 @@ sudo usermod -aG sudo odyio
 
 # 2. Installer les dépendances système
 sudo apt update && sudo apt install -y python3-dev python3-pip python3-venv \
-    mariadb-server redis-server git curl build-essential
+    postgresql postgresql-contrib postgresql-client redis-server git curl build-essential
 
 # 3. Installer Node.js 20
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
@@ -148,6 +148,15 @@ sudo apt install -y nodejs
 
 # 4. Installer Yarn
 npm install -g yarn
+
+# 5. Créer la base PostgreSQL
+sudo -u postgres psql -c "CREATE USER odyio WITH PASSWORD 'odyio_password_here';"
+sudo -u postgres psql -c "CREATE DATABASE odyio_db OWNER odyio;"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE odyio_db TO odyio;"
+sudo -u postgres psql -d odyio_db -c "GRANT ALL ON SCHEMA public TO odyio;"
+
+# 6. Installer psycopg2-binary
+sudo -u odyio pip install psycopg2-binary
 ```
 
 ### Initialiser le bench
@@ -160,8 +169,14 @@ sudo -u odyio bench init odyio-bench --frappe-branch version-15
 cd odyio-bench
 sudo -u odyio bench get-app erpnext --branch version-15
 
-# 7. Créer le site
-sudo -u odyio bench new-site odyio.localhost --admin-password admin
+# 7. Créer le site PostgreSQL
+sudo -u odyio bench new-site odyio.localhost \
+  --db-type postgres \
+  --db-name odyio_db \
+  --db-password odyio_password_here \
+  --db-root-username postgres \
+  --db-root-password postgres \
+  --admin-password admin
 
 # 8. Installer ERPNext sur le site
 sudo -u odyio bench --site odyio.localhost install-app erpnext
