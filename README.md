@@ -11,7 +11,7 @@ audioprosthetist_SaaS/
 ├── apps/
 │   ├── odyio_cnam/          # App Frappe principale — config, workspace, print formats
 │   └── odyio_noah/          # App Frappe — sync Noah ES (phase 3)
-├── ai-service/              # FastAPI — microservice IA (prédiction CNAM, OCR)
+├── odyio-frontend/          # React + Vite + Tailwind — UI custom
 ├── archive/                 # Ancien codebase Spring Boot/React (référence)
 ├── setup/                   # Scripts d'installation WSL2 + bench
 ├── PROJECT_LOG.md           # Journal de développement détaillé
@@ -23,21 +23,22 @@ audioprosthetist_SaaS/
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    Bureau / Navigateur                   │
-│              http://odyio.localhost:8000                 │
+│              http://odyio.localhost:5173                  │
 │                                                         │
 │    ┌───────────────────────────────────────────────┐    │
-│    │         Frappe Desk (UI monolithique)         │    │
-│    │   Workspace "Odyio" — 8 modules, 8 raccourcis│    │
-│    │   Formulaires, listes, rapports, print formats│    │
+│    │       React + Vite + Tailwind (UI custom)     │    │
+│    │   Login, Dashboard, Clients, Ventes, CNAM     │    │
+│    │   Stocks, Fournisseurs, Trésorerie, Settings  │    │
 │    └───────────────────┬───────────────────────────┘    │
-│                        │                                │
+│                        │ REST API                       │
 │    ┌───────────────────▼───────────────────────────┐    │
 │    │           Frappe Framework (Python)           │    │
 │    │    DocTypes, Controllers, Hooks, Whitelisted   │    │
+│    │    /api/resource/...  +  /api/method/...      │    │
 │    └──────┬──────────────────────────┬─────────────┘    │
 │           │                          │                  │
 │  ┌────────▼────────┐      ┌─────────▼──────────┐      │
-│  │    MariaDB       │      │      Redis          │      │
+│  │   PostgreSQL     │      │      Redis          │      │
 │  │   (données)      │      │  (cache, queue)     │      │
 │  └─────────────────┘      └────────────────────┘      │
 │                                                         │
@@ -46,30 +47,19 @@ audioprosthetist_SaaS/
 │    │  Ventes, Achats, Stock, Comptabilité, RH      │    │
 │    └───────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│              Microservice IA (port 8001)                 │
-│                                                         │
-│    FastAPI — Docker                                    │
-│    ├── POST /ai/predict-claim   (prédiction CNAM)      │
-│    ├── POST /ai/extract-document (OCR documents)       │
-│    └── GET  /health                                    │
-└─────────────────────────────────────────────────────────┘
 ```
 
 ### Stack technique
 
 | Couche | Technologie | Rôle |
 |--------|------------|------|
-| **Framework** | Frappe Framework v15 | MVC complet — DocTypes, ORM, API REST, UI Desk |
+| **Framework** | Frappe Framework v15 | MVC complet — DocTypes, ORM, API REST |
 | **ERP** | ERPNext v15 | Modules standards (ventes, achats, stock, comptabilité) |
 | **Backend** | Python 3.12 | Controllers, hooks, API whitelisted |
-| **Frontend** | Frappe UI (JS + Jinja2) | Desk SPA, formulaires, listes, workspace |
+| **Frontend** | React 18 + Vite + Tailwind | UI custom, SPA, routing, state management |
 | **Base de données** | PostgreSQL 16 | Données (JSONB pour audiogrammes, schéma auto-généré) |
 | **Cache / Queue** | Redis 7 | Cache, SocketIO, background jobs (RQ) |
-| **IA** | FastAPI (Python 3.11) | Microservice Docker — prédiction, OCR |
 | **OS** | WSL2 Ubuntu 24.04 | Environnement de développement |
-| **Build** | bench CLI + Webpack | Compilation assets JS/CSS |
 
 ### Pourquoi Frappe (et pas Spring Boot/React)
 
@@ -87,7 +77,7 @@ audioprosthetist_SaaS/
 
 ## Modules fonctionnels
 
-### Phase 1 (en cours) — Configuration ERPNext
+### Phase 1 (en cours) — Configuration ERPNext + React Frontend
 
 | Module | Odyio | ERPNext Standard | Statut |
 |--------|-------|-----------------|--------|
@@ -98,6 +88,7 @@ audioprosthetist_SaaS/
 | Trésorerie | Journal Entry, Account, Bank Account | Standards | Configuré |
 | Rapports | General Ledger, AR, AP, Stock Balance, Gross Profit | Standards | Configuré |
 | Configuration | Company, Fiscal Year, User, Role, Print Format | Standards | Configuré |
+| React Frontend | Vite + Tailwind + REST API | — | Fonctionnel |
 
 **Print formats personnalisés :**
 - `Odyio BL` — Bon de livraison (Delivery Note)
@@ -105,14 +96,18 @@ audioprosthetist_SaaS/
 
 **Workspace :** `Odyio` — 8 cartes, 8 raccourcis, labels en français.
 
-### Phase 2 (à venir) — CNAM + IA
+**React Frontend :**
+- Login, Dashboard, layout responsive (Sidebar + Topbar)
+- API clients (Frappe REST), Zustand stores
+- Proxy Vite → Frappe backend
+
+### Phase 2 (à venir) — CNAM
 
 | Fonctionnalité | Description |
 |----------------|-------------|
 | CNAM Demande | DocType submittable — demande de prise en charge |
 | CNAM Document | Child table — documents joints (ordonnance, audiogramme, devis) |
-| Prédiction IA | FastAPI endpoint — probabilité d'approbation CNAM |
-| Extraction OCR | FastAPI endpoint — extraction automatique de documents |
+| CNAM API | Whitelisted methods pour workflow CNAM |
 
 ### Phase 3 (à venir) — Marketplace + Noah ES
 
@@ -130,6 +125,7 @@ audioprosthetist_SaaS/
 - Windows 10/11 avec WSL2 activé
 - Ubuntu 24.04 sur WSL2
 - 8 Go RAM minimum (16 Go recommandé)
+- Node.js 18+ (pour le frontend React)
 
 ### Configuration WSL2
 
@@ -162,15 +158,15 @@ sudo -u odyio pip install psycopg2-binary
 ### Initialiser le bench
 
 ```bash
-# 5. Initialiser le bench Frappe v15
-sudo -u odyio bench init odyio-bench --frappe-branch version-15
+# 1. Initialiser le bench Frappe v15
+bench init odyio-bench-pg --frappe-branch version-15
 
-# 6. Installer ERPNext
-cd odyio-bench
-sudo -u odyio bench get-app erpnext --branch version-15
+# 2. Installer ERPNext
+cd odyio-bench-pg
+bench get-app erpnext --branch version-15
 
-# 7. Créer le site PostgreSQL
-sudo -u odyio bench new-site odyio.localhost \
+# 3. Créer le site PostgreSQL
+bench new-site odyio.localhost \
   --db-type postgres \
   --db-name odyio_db \
   --db-password odyio_password_here \
@@ -178,61 +174,35 @@ sudo -u odyio bench new-site odyio.localhost \
   --db-root-password postgres \
   --admin-password admin
 
-# 8. Installer ERPNext sur le site
-sudo -u odyio bench --site odyio.localhost install-app erpnext
+# 4. Installer ERPNext sur le site
+bench --site odyio.localhost install-app erpnext
 
-# 9. Installer les apps Odyio
-sudo -u odyio bench get-app $URL_DU_REPO --branch main
-sudo -u odyio bench --site odyio.localhost install-app odyio_cnam
-sudo -u odyio bench --site odyio.localhost install-app odyio_noah
+# 5. Installer les apps Odyio
+bench get-app $URL_DU_REPO
+bench --site odyio.localhost install-app odyio_cnam
+bench --site odyio.localhost install-app odyio_noah
 
-# 10. Configurer le workspace
-sudo -u odyio bench --site odyio.localhost execute odyio_cnam.build_workspace.execute
+# 6. Configurer le workspace
+bench --site odyio.localhost execute odyio_cnam.build_workspace.execute
 
-# 11. Lancer le serveur
-sudo -u odyio bench start
+# 7. Lancer le serveur Frappe
+bench start
+```
+
+### Lancer le frontend React
+
+```bash
+cd odyio-frontend
+npm install
+npm run dev
+# Accessible sur http://localhost:5173
 ```
 
 ### Accès
 
-- **Desk :** http://odyio.localhost:8000
+- **Frontend React :** http://localhost:5173
+- **Frappe Desk :** http://odyio.localhost:8000
 - **Admin :** `Administrator` / `admin`
-
-### Lancer le microservice IA
-
-```bash
-cd ai-service
-docker compose up -d
-# Accessible sur http://localhost:8001
-```
-
----
-
-## Microservice IA
-
-Le microservice FastAPI tourne en Docker sur le port 8001.
-
-### Endpoints
-
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| `POST` | `/ai/predict-claim` | Prédire la probabilité d'approbation d'une demande CNAM |
-| `POST` | `/ai/extract-document` | Extraire les données d'un document (OCR) |
-| `GET` | `/health` | Health check |
-
-### Exemple d'utilisation
-
-```bash
-curl -X POST http://localhost:8001/ai/predict-claim \
-  -H "Content-Type: application/json" \
-  -d '{
-    "montant_demande": 1500,
-    "montant_total_ttc": 2000,
-    "taux_remboursement": 70,
-    "cnam_affiliation_type": "CNAM_ACTIVE",
-    "customer_name": "Ahmed Ben Ali"
-  }'
-```
 
 ---
 
@@ -280,6 +250,32 @@ apps/odyio_cnam/
 ├── pyproject.toml            # Métadonnées Python
 ├── README.md
 └── license.txt
+```
+
+### Structure du frontend React
+
+```
+odyio-frontend/
+├── src/
+│   ├── api/
+│   │   └── frappe.js         # Client REST Frappe (login, CRUD, methods)
+│   ├── stores/
+│   │   ├── authStore.js      # Auth (Zustand + persist)
+│   │   └── clientStore.js    # Client CRUD
+│   ├── components/
+│   │   └── layout/
+│   │       ├── AppLayout.jsx # Shell layout
+│   │       ├── Sidebar.jsx   # Navigation latérale
+│   │       └── Topbar.jsx    # Barre supérieure
+│   ├── pages/
+│   │   ├── Login.jsx         # Page de connexion
+│   │   └── Dashboard.jsx     # Tableau de bord
+│   ├── App.jsx               # Router + ProtectedRoute
+│   ├── main.jsx              # Entry point
+│   └── index.css             # Tailwind + custom styles
+├── tailwind.config.js
+├── vite.config.js            # Proxy /api → Frappe
+└── .env                      # VITE_FRAPPE_URL, VITE_FRAPPE_SITE
 ```
 
 ### Commandes utiles

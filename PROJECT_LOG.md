@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Odyio is a SaaS clinic management system for a single audioprothésiste clinic in Tunisia, built on Frappe/ERPNext v15 with 3 custom Frappe apps (odyio_cnam, odyio_noah, FastAPI AI service).
+Odyio is a SaaS clinic management system for a single audioprothésiste clinic in Tunisia, built on Frappe/ERPNext v15 backend with custom React frontend.
 
 ---
 
@@ -190,7 +190,6 @@ Bench processes running:
 ### WSL2 — `/home/odyio/odyio-bench/apps/odyio_cnam/odyio_cnam/`
 
 ```
-├── ai_client.py                          — CnamAIClient (HTTP to FastAPI port 8001)
 ├── commands.py                           — create_print_formats(), create_cnam_dossier_pf()
 ├── hooks.py                              — doc_events (Sales Invoice on_submit), fixtures
 ├── hooks_handler.py                      — on_sales_invoice_submit()
@@ -208,23 +207,34 @@ Bench processes running:
 │   │   └── cnam_document.py
 │   └── cnam_demande/
 │       ├── cnam_demande.json
-│       ├── cnam_demande.py               — Controller (validate, before_submit, trigger_ai_prediction)
-│       ├── cnam_demande.js               — Form script (AI gauge, PDF btn)
+│       ├── cnam_demande.py               — Controller (validate, before_submit)
+│       ├── cnam_demande.js               — Form script (PDF btn)
 │       └── test_cnam_demande.py
 ```
 
-### Windows — Project Root (AI Service)
+### Windows — React Frontend
 
 ```
-C:\Users\gasmi\Downloads\audioprosthetist_SaaS\ai-service\
-├── main.py                               — FastAPI app (port 8001)
-├── Dockerfile                            — python:3.11-slim
-├── requirements.txt                      — fastapi, uvicorn, pydantic
-├── docker-compose.yml                    — Service on port 8001
-└── routers/
-    ├── __init__.py
-    ├── predict_claim.py                  — POST /ai/predict-claim
-    └── extract_document.py               — POST /ai/extract-document
+odyio-frontend/
+├── src/
+│   ├── api/
+│   │   └── frappe.js                     — REST API client (login, CRUD, methods)
+│   ├── stores/
+│   │   ├── authStore.js                  — Auth (Zustand + persist)
+│   │   └── clientStore.js                — Client CRUD
+│   ├── components/layout/
+│   │   ├── AppLayout.jsx                 — Shell layout
+│   │   ├── Sidebar.jsx                   — Navigation latérale
+│   │   └── Topbar.jsx                    — Barre supérieure
+│   ├── pages/
+│   │   ├── Login.jsx                     — Page de connexion
+│   │   └── Dashboard.jsx                 — Tableau de bord
+│   ├── App.jsx                           — Router + ProtectedRoute
+│   ├── main.jsx                          — Entry point
+│   └── index.css                         — Tailwind + custom styles
+├── tailwind.config.js
+├── vite.config.js                        — Proxy /api → Frappe
+└── .env                                  — VITE_FRAPPE_URL, VITE_FRAPPE_SITE
 ```
 
 ### Key Configuration Files
@@ -379,8 +389,9 @@ ALTER TABLE `tabSales Invoice` ADD COLUMN `custom_cnam_eligible` int(1) NOT NULL
 
 ## Pending / Low Priority
 
-1. **Phase 3 — Marketplace**: `Catalogue Produit` DocType for B2B supplier catalog
-2. **Phase 3 — Noah ES Sync**: Bi-directional sync with Noah ES hearing aid fitting software
-3. **AI Service**: Docker Desktop needs to be started to run `ai-service/docker-compose up -d`
-4. **Hosts file**: Add `172.26.222.190 odyio.localhost` to Windows hosts file for direct browser access
-5. **Cleanup old bench**: `rm -rf /home/odyio/odyio-bench` (MariaDB bench, no longer needed)
+1. **Phase 2 — CNAM DocTypes**: Create CNAM Demande, CNAM Document DocTypes + custom fields
+2. **Phase 2 — CNAM API**: Whitelisted methods for CNAM workflow
+3. **Phase 3 — Marketplace**: `Catalogue Produit` DocType for B2B supplier catalog
+4. **Phase 3 — Noah ES Sync**: Bi-directional sync with Noah ES hearing aid fitting software
+5. **Hosts file**: Add `172.26.222.190 odyio.localhost` to Windows hosts file for direct browser access
+6. **Cleanup old bench**: `rm -rf /home/odyio/odyio-bench` (MariaDB bench, no longer needed)
