@@ -1,0 +1,82 @@
+/* Audiometrie - Audiogram Drawing Tool Styles */
+
+.audiometrie-container {
+  border: 1px solid #d1d8dd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.audiometrie-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: #f5f7fa;
+  border-bottom: 1px solid #d1d8dd;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.audiometrie-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-od {
+  color: #e74c3c;
+}
+
+.legend-og {
+  color: #3498db;
+}
+
+.audiometrie-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.audiometrie-actions .btn {
+  font-size: 12px;
+  padding: 4px 12px;
+  font-weight: 600;
+}
+
+.audiometrie-canvas-wrapper {
+  padding: 10px;
+  text-align: center;
+  background: #fff;
+}
+
+#audiometrie-canvas {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  cursor: crosshair;
+  max-width: 100%;
+  height: auto;
+}
+
+#audiometrie-canvas:hover {
+  border-color: #3498db;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .audiometrie-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .audiometrie-legend {
+    flex-direction: column;
+    gap: 4px;
+  }
+}

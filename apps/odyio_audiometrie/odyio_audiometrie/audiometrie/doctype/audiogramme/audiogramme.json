@@ -1,0 +1,136 @@
+{
+ "name": "Audiogramme",
+ "module": "Audiometrie",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "autoname": "format:AUD-{patient}-{####}",
+ "title_field": "patient_name",
+ "search_fields": "patient_name,patient",
+ "is_submittable": 0,
+ "istable": 0,
+ "is_tree": 0,
+ "allow_rename": 0,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "fields": [
+  {
+   "fieldname": "patient",
+   "fieldtype": "Link",
+   "label": "Patient",
+   "options": "Customer",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "patient_name",
+   "fieldtype": "Data",
+   "label": "Nom du Patient",
+   "fetch_from": "patient.customer_name",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "date_examen",
+   "fieldtype": "Date",
+   "label": "Date de l'examen",
+   "default": "Today",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "type_audiogramme",
+   "fieldtype": "Select",
+   "label": "Type d'audiogramme",
+   "options": "Tonale Purs\nTonale Mixte\nVocal\nTimpanometrie",
+   "default": "Tonale Purs",
+   "reqd": 1
+  },
+  {
+   "fieldname": "oreille_droite",
+   "fieldtype": "Select",
+   "label": "Oreille droite (OD)",
+   "options": "Normal\nPerte legere\nPerte moderee\nPerte severe\nPerte profonde",
+   "default": "Normal"
+  },
+  {
+   "fieldname": "oreille_gauche",
+   "fieldtype": "Select",
+   "label": "Oreille gauche (OG)",
+   "options": "Normal\nPerte legere\nPerte moderee\nPerte severe\nPerte profonde",
+   "default": "Normal"
+  },
+  {
+   "fieldname": "section_audiogramme",
+   "fieldtype": "Section Break",
+   "label": "Audiogramme"
+  },
+  {
+   "fieldname": "audiogramme_json",
+   "fieldtype": "Code",
+   "label": "Données Audiogramme (JSON)",
+   "options": "JSON",
+   "hidden": 1
+  },
+  {
+   "fieldname": "audiogramme_html",
+   "fieldtype": "HTML",
+   "label": "Audiogramme"
+  },
+  {
+   "fieldname": "section_notes",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes cliniques"
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Data",
+   "label": "Créé par",
+   "default": "",
+   "read_only": 1,
+   "no_copy": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 0,
+   "cancel": 0,
+   "amend": 0,
+   "report": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "Audiometriste",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 0,
+   "submit": 0,
+   "cancel": 0,
+   "amend": 0,
+   "report": 1,
+   "export": 1,
+   "import": 0,
+   "print": 1,
+   "email": 1
+  }
+ ]
+}

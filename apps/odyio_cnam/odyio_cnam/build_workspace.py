@@ -30,6 +30,7 @@ def execute():
         {"id": "c6", "type": "card", "data": {"card_name": "Rapports", "col": 4}},
         {"id": "c7", "type": "card", "data": {"card_name": "Marketplace", "col": 4}},
         {"id": "c8", "type": "card", "data": {"card_name": "Configuration", "col": 4}},
+        {"id": "c9", "type": "card", "data": {"card_name": "Audiometrie", "col": 4}},
     ])
 
     ws = frappe.get_doc({
@@ -96,6 +97,9 @@ def execute():
             ("DocType", "Print Format", "List", "Formats d'Impression", 0),
             ("DocType", "Document Naming Settings", "List", "Series de Numerotation", 0),
         ]),
+        ("Audiometrie", [
+            ("DocType", "Audiogramme", "List", "Audiogrammes", 1),
+        ]),
     ]
 
     for card_name, links in card_sections:
@@ -125,6 +129,7 @@ def execute():
         ("Sales Order", "Commande Vente"),
         ("Purchase Order", "Commande Achat"),
         ("Payment Entry", "Encaissement"),
+        ("Audiogramme", "Audiogrammes"),
     ]:
         ws.append("shortcuts", {
             "link_type": "DocType",
