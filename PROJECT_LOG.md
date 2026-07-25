@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Odyio is a SaaS clinic management system for a single audioprothésiste clinic in Tunisia, built on Frappe/ERPNext v15 backend with custom React frontend.
+Odyio is a SaaS clinic management system for a single audioprothésiste clinic in Tunisia, built entirely on Frappe/ERPNext v15 (Desk UI, DocTypes, hooks, whitelisted API).
 
 ---
 
@@ -210,31 +210,6 @@ Bench processes running:
 │       ├── cnam_demande.py               — Controller (validate, before_submit)
 │       ├── cnam_demande.js               — Form script (PDF btn)
 │       └── test_cnam_demande.py
-```
-
-### Windows — React Frontend
-
-```
-odyio-frontend/
-├── src/
-│   ├── api/
-│   │   └── frappe.js                     — REST API client (login, CRUD, methods)
-│   ├── stores/
-│   │   ├── authStore.js                  — Auth (Zustand + persist)
-│   │   └── clientStore.js                — Client CRUD
-│   ├── components/layout/
-│   │   ├── AppLayout.jsx                 — Shell layout
-│   │   ├── Sidebar.jsx                   — Navigation latérale
-│   │   └── Topbar.jsx                    — Barre supérieure
-│   ├── pages/
-│   │   ├── Login.jsx                     — Page de connexion
-│   │   └── Dashboard.jsx                 — Tableau de bord
-│   ├── App.jsx                           — Router + ProtectedRoute
-│   ├── main.jsx                          — Entry point
-│   └── index.css                         — Tailwind + custom styles
-├── tailwind.config.js
-├── vite.config.js                        — Proxy /api → Frappe
-└── .env                                  — VITE_FRAPPE_URL, VITE_FRAPPE_SITE
 ```
 
 ### Key Configuration Files

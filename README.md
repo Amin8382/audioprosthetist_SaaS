@@ -9,9 +9,8 @@ SaaS mono-clinique de gestion complète pour cabinet d'audioprothésiste en Tuni
 ```
 audioprosthetist_SaaS/
 ├── apps/
-│   ├── odyio_cnam/          # App Frappe principale — config, workspace, print formats
+│   ├── odyio_cnam/          # App Frappe — config, workspace, DocTypes, print formats, API
 │   └── odyio_noah/          # App Frappe — sync Noah ES (phase 3)
-├── odyio-frontend/          # React + Vite + Tailwind — UI custom
 ├── archive/                 # Ancien codebase Spring Boot/React (référence)
 ├── setup/                   # Scripts d'installation WSL2 + bench
 ├── PROJECT_LOG.md           # Journal de développement détaillé
@@ -23,14 +22,14 @@ audioprosthetist_SaaS/
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    Bureau / Navigateur                   │
-│              http://odyio.localhost:5173                  │
+│              http://odyio.localhost:8000                 │
 │                                                         │
 │    ┌───────────────────────────────────────────────┐    │
-│    │       React + Vite + Tailwind (UI custom)     │    │
-│    │   Login, Dashboard, Clients, Ventes, CNAM     │    │
-│    │   Stocks, Fournisseurs, Trésorerie, Settings  │    │
+│    │         Frappe Desk (UI monolithique)         │    │
+│    │   Workspace "Odyio" — 8 modules, 8 raccourcis│    │
+│    │   Formulaires, listes, rapports, print formats│    │
 │    └───────────────────┬───────────────────────────┘    │
-│                        │ REST API                       │
+│                        │                                │
 │    ┌───────────────────▼───────────────────────────┐    │
 │    │           Frappe Framework (Python)           │    │
 │    │    DocTypes, Controllers, Hooks, Whitelisted   │    │
@@ -53,31 +52,19 @@ audioprosthetist_SaaS/
 
 | Couche | Technologie | Rôle |
 |--------|------------|------|
-| **Framework** | Frappe Framework v15 | MVC complet — DocTypes, ORM, API REST |
+| **Framework** | Frappe Framework v15 | MVC complet — DocTypes, ORM, API REST, UI Desk |
 | **ERP** | ERPNext v15 | Modules standards (ventes, achats, stock, comptabilité) |
 | **Backend** | Python 3.12 | Controllers, hooks, API whitelisted |
-| **Frontend** | React 18 + Vite + Tailwind | UI custom, SPA, routing, state management |
+| **Frontend** | Frappe Desk (JS + Jinja2) | Desk SPA, formulaires, listes, workspace |
 | **Base de données** | PostgreSQL 16 | Données (JSONB pour audiogrammes, schéma auto-généré) |
 | **Cache / Queue** | Redis 7 | Cache, SocketIO, background jobs (RQ) |
 | **OS** | WSL2 Ubuntu 24.04 | Environnement de développement |
-
-### Pourquoi Frappe (et pas Spring Boot/React)
-
-| Critère | Frappe/ERPNext | Spring Boot/React |
-|---------|---------------|-------------------|
-| Setup initial | `bench init` → 10 min | Docker Compose → 30 min |
-| CRUD automatisé | DocType → formulaire + API auto | Code manuel par endpoint |
-| UI desk | Intégrée (listes, formulaires, filtres) | React custom complet |
-| Auth + rôles | Intégré (System Manager, User, Role) | JWT custom + tables |
-| Print formats | Jinja2 templates, pas de LaTeX | Templates externes |
-| Modules ERP | 30+ modules inclus (stock, achats, comptabilité) | Dev custom ou libs tierces |
-| Déploiement | `bench update` | CI/CD Docker custom |
 
 ---
 
 ## Modules fonctionnels
 
-### Phase 1 (en cours) — Configuration ERPNext + React Frontend
+### Phase 1 (en cours) — Configuration ERPNext
 
 | Module | Odyio | ERPNext Standard | Statut |
 |--------|-------|-----------------|--------|
@@ -88,18 +75,12 @@ audioprosthetist_SaaS/
 | Trésorerie | Journal Entry, Account, Bank Account | Standards | Configuré |
 | Rapports | General Ledger, AR, AP, Stock Balance, Gross Profit | Standards | Configuré |
 | Configuration | Company, Fiscal Year, User, Role, Print Format | Standards | Configuré |
-| React Frontend | Vite + Tailwind + REST API | — | Fonctionnel |
 
 **Print formats personnalisés :**
 - `Odyio BL` — Bon de livraison (Delivery Note)
 - `Odyio Facture` — Facture client (Sales Invoice)
 
 **Workspace :** `Odyio` — 8 cartes, 8 raccourcis, labels en français.
-
-**React Frontend :**
-- Login, Dashboard, layout responsive (Sidebar + Topbar)
-- API clients (Frappe REST), Zustand stores
-- Proxy Vite → Frappe backend
 
 ### Phase 2 (à venir) — CNAM
 
@@ -125,7 +106,6 @@ audioprosthetist_SaaS/
 - Windows 10/11 avec WSL2 activé
 - Ubuntu 24.04 sur WSL2
 - 8 Go RAM minimum (16 Go recommandé)
-- Node.js 18+ (pour le frontend React)
 
 ### Configuration WSL2
 
@@ -185,23 +165,13 @@ bench --site odyio.localhost install-app odyio_noah
 # 6. Configurer le workspace
 bench --site odyio.localhost execute odyio_cnam.build_workspace.execute
 
-# 7. Lancer le serveur Frappe
+# 7. Lancer le serveur
 bench start
-```
-
-### Lancer le frontend React
-
-```bash
-cd odyio-frontend
-npm install
-npm run dev
-# Accessible sur http://localhost:5173
 ```
 
 ### Accès
 
-- **Frontend React :** http://localhost:5173
-- **Frappe Desk :** http://odyio.localhost:8000
+- **Desk :** http://odyio.localhost:8000
 - **Admin :** `Administrator` / `admin`
 
 ---
@@ -250,32 +220,6 @@ apps/odyio_cnam/
 ├── pyproject.toml            # Métadonnées Python
 ├── README.md
 └── license.txt
-```
-
-### Structure du frontend React
-
-```
-odyio-frontend/
-├── src/
-│   ├── api/
-│   │   └── frappe.js         # Client REST Frappe (login, CRUD, methods)
-│   ├── stores/
-│   │   ├── authStore.js      # Auth (Zustand + persist)
-│   │   └── clientStore.js    # Client CRUD
-│   ├── components/
-│   │   └── layout/
-│   │       ├── AppLayout.jsx # Shell layout
-│   │       ├── Sidebar.jsx   # Navigation latérale
-│   │       └── Topbar.jsx    # Barre supérieure
-│   ├── pages/
-│   │   ├── Login.jsx         # Page de connexion
-│   │   └── Dashboard.jsx     # Tableau de bord
-│   ├── App.jsx               # Router + ProtectedRoute
-│   ├── main.jsx              # Entry point
-│   └── index.css             # Tailwind + custom styles
-├── tailwind.config.js
-├── vite.config.js            # Proxy /api → Frappe
-└── .env                      # VITE_FRAPPE_URL, VITE_FRAPPE_SITE
 ```
 
 ### Commandes utiles
