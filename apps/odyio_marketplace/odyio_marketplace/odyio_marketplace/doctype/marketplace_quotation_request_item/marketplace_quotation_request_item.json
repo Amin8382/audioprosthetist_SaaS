@@ -1,0 +1,53 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "doctype": "DocType",
+ "document_type": "Document",
+ "fields": [
+  {
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "label": "Item",
+   "options": "Item",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "item_name_snapshot",
+   "fieldtype": "Data",
+   "label": "Item Name Snapshot",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "supplier_reference_snapshot",
+   "fieldtype": "Data",
+   "label": "Supplier Reference Snapshot",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Float",
+   "label": "Quantity",
+   "default": 1,
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "line_notes",
+   "fieldtype": "Small Text",
+   "label": "Line Notes",
+   "in_list_view": 1
+  }
+ ],
+ "istable": 1,
+ "module": "Odyio Marketplace",
+ "name": "Marketplace Quotation Request Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "idx",
+ "sort_order": "ASC",
+ "states": []
+}
+
