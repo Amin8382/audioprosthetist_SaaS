@@ -9,7 +9,6 @@ SaaS mono-clinique de gestion complète pour cabinet d'audioprothésiste en Tuni
 ```
 audioprosthetist_SaaS/
 ├── apps/
-│   ├── odyio_cnam/          # App Frappe — config, workspace, DocTypes, print formats, API
 │   └── odyio_noah/          # App Frappe — sync Noah ES (phase 3)
 ├── archive/                 # Ancien codebase Spring Boot/React (référence)
 ├── setup/                   # Scripts d'installation WSL2 + bench
@@ -82,14 +81,6 @@ audioprosthetist_SaaS/
 
 **Workspace :** `Odyio` — 8 cartes, 8 raccourcis, labels en français.
 
-### Phase 2 (à venir) — CNAM
-
-| Fonctionnalité | Description |
-|----------------|-------------|
-| CNAM Demande | DocType submittable — demande de prise en charge |
-| CNAM Document | Child table — documents joints (ordonnance, audiogramme, devis) |
-| CNAM API | Whitelisted methods pour workflow CNAM |
-
 ### Phase 3 (à venir) — Marketplace + Noah ES
 
 | Fonctionnalité | Description |
@@ -159,13 +150,9 @@ bench --site odyio.localhost install-app erpnext
 
 # 5. Installer les apps Odyio
 bench get-app $URL_DU_REPO
-bench --site odyio.localhost install-app odyio_cnam
 bench --site odyio.localhost install-app odyio_noah
 
-# 6. Configurer le workspace
-bench --site odyio.localhost execute odyio_cnam.build_workspace.execute
-
-# 7. Lancer le serveur
+# 6. Lancer le serveur
 bench start
 ```
 
@@ -176,58 +163,13 @@ bench start
 
 ---
 
-## Custom DocTypes
-
-| DocType | Type | Description |
-|---------|------|-------------|
-| CNAM Demande | Main (submittable) | Demande de prise en charge CNAM |
-| CNAM Document | Child Table | Documents joints à une demande CNAM |
-
-## Custom Fields (sur DocTypes ERPNext)
-
-| DocType | Champ | Type | Description |
-|---------|-------|------|-------------|
-| Customer | `cnam_number` | Data | Numéro CNAM |
-| Customer | `cnam_affiliation_type` | Select | Type d'affiliation CNAM |
-| Customer | `cnam_expiry` | Date | Date d'expiration CNAM |
-| Customer | `audiogram_left` | JSON | Audiogramme oreille gauche |
-| Customer | `audiogram_right` | JSON | Audiogramme oreille droite |
-| Customer | `ear_side` | Select | Latéralité (LEFT/RIGHT/BILATERAL) |
-| Customer | `noah_patient_id` | Data | ID patient Noah ES |
-| Customer | `noah_last_sync` | Datetime | Dernière synchronisation Noah |
-| Customer | `noah_sync_status` | Select | Statut synchronisation Noah |
-| Delivery Note | `bl_type` | Select | Type de bon de livraison |
-| Sales Invoice | `custom_cnam_eligible` | Check | Éligibilité CNAM |
-
 ---
 
 ## Développement
 
-### Structure d'une app Frappe
-
-```
-apps/odyio_cnam/
-├── odyio_cnam/
-│   ├── __init__.py
-│   ├── hooks.py              # Configuration de l'app
-│   ├── modules.txt           # Modules de l'app
-│   ├── build_workspace.py    # Script de création du workspace
-│   ├── commands.py           # Commandes CLI personnalisées
-│   ├── config/               # Configuration du module
-│   ├── templates/            # Templates Jinja2 (print formats)
-│   ├── workspace/            # JSON du workspace
-│   └── public/               # Assets JS/CSS
-├── pyproject.toml            # Métadonnées Python
-├── README.md
-└── license.txt
-```
-
 ### Commandes utiles
 
 ```bash
-# Rebuild le workspace Odyio
-bench --site odyio.localhost execute odyio_cnam.build_workspace.execute
-
 # Vider le cache
 bench --site odyio.localhost clear-cache
 

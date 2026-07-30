@@ -1,6 +1,0 @@
-app_name = "odyio_cnam"
-app_title = "Odyio"
-app_publisher = "Odyio Technologies"
-app_description = "Odyio Audioprothetist SaaS"
-app_email = "contact@odyio.fr"
-app_license = "mit"
