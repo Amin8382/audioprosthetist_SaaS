@@ -1,7 +1,17 @@
-// Audiometrie - Audiogramme Drawing Tool
-// Standard audiogram: X=frequency(Hz), Y=hearing level(dB HL)
+// Audiometrie - Clinical Audiogram Drawing Tool
+// Side-by-side OD/OG using table layout (Frappe-proof)
+// CA (blue circles) + CO (red brackets)
+// dB axis inverted: 0 top -> 130 bottom
+// Hz: 250, 500, 1000, 2000, 4000, 8000
 
 frappe.provide("odiometrie.audiometrie");
+
+var FREQS = [250, 500, 1000, 2000, 4000, 8000];
+var DBS = [];
+for (var d = 0; d <= 130; d += 10) DBS.push(d);
+
+var CA_COLOR = "#2563EB";
+var CO_COLOR = "#DC2626";
 
 frappe.ui.form.on("Audiogramme", {
   refresh(frm) {
@@ -10,346 +20,254 @@ frappe.ui.form.on("Audiogramme", {
     } else {
       frm.fields_dict.audiogramme_html.$wrapper.html(
         '<div style="text-align:center;padding:40px;color:#888;">' +
-          '<p>Cliquez ci-dessous pour dessiner l\'audiogramme</p>' +
+          '<p style="font-size:14px;">Cliquez ci-dessous pour dessiner l\'audiogramme</p>' +
           '<button class="btn btn-primary btn-lg" id="btn-start-audio">' +
-          '  Commencer l\'audiogramme' +
-          "</button>" +
-          "</div>"
+          '  Commencer l\'audiogramme</button></div>'
       );
       frm.fields_dict.audiogramme_html.$wrapper
         .find("#btn-start-audio")
         .on("click", function () {
-          init_audiogramme(frm);
+          frm.doc.audiogramme_json = JSON.stringify({
+            right: { CA: {}, CO: {} },
+            left: { CA: {}, CO: {} },
+          });
+          render_audiogramme(frm);
         });
     }
   },
 });
 
-function init_audiogramme(frm) {
-  var data = { od: [], og: [] };
-  frm.doc.audiogramme_json = JSON.stringify(data);
-  render_audiogramme(frm);
+function migrate(raw) {
+  if (!raw) return { right: { CA: {}, CO: {} }, left: { CA: {}, CO: {} } };
+  try {
+    var o = JSON.parse(raw);
+    if (o.right && o.right.CA !== undefined) return o;
+    if (o.od || o.og) {
+      var m = { right: { CA: {}, CO: {} }, left: { CA: {}, CO: {} } };
+      (o.od || []).forEach(function (p) { m.right.CA[p.f] = p.d; });
+      (o.og || []).forEach(function (p) { m.left.CA[p.f] = p.d; });
+      return m;
+    }
+    return o;
+  } catch (e) {
+    return { right: { CA: {}, CO: {} }, left: { CA: {}, CO: {} } };
+  }
 }
 
 function render_audiogramme(frm) {
-  var data = JSON.parse(frm.doc.audiogramme_json || '{"od":[],"og":[]}');
-
-  var html = build_audiogramme_ui(data);
+  var data = migrate(frm.doc.audiogramme_json);
+  var html =
+    '<div class="ao-wrap">' +
+      '<div class="ao-bar">' +
+        '<div class="ao-modes">' +
+          '<span class="ao-mode-lbl">Mode :</span>' +
+          '<button class="ao-btn ao-ca active" id="btn-ca"><span class="ao-dot-ca"></span> CA (Air)</button>' +
+          '<button class="ao-btn ao-co" id="btn-co"><span class="ao-dot-co"></span> CO (Os)</button>' +
+        '</div>' +
+        '<div class="ao-bar-r">' +
+          '<button class="btn btn-xs btn-danger" id="btn-clear-audio">Effacer</button>' +
+          '<button class="btn btn-xs btn-success" id="btn-save-audio">Sauvegarder</button>' +
+        '</div>' +
+      '</div>' +
+      '<table class="ao-table"><tr>' +
+        '<td class="ao-cell">' +
+          '<div class="ao-title ao-title-od">\u25B3 OD \u2014 Oreille Droite</div>' +
+          '<canvas id="canvas-od" width="340" height="480"></canvas>' +
+          '<div class="ao-leg"><span class="ao-leg-ca"><span class="ao-dot-ca"></span> CA</span>' +
+          '<span class="ao-leg-co"><span class="ao-dot-co"></span> CO</span></div>' +
+        '</td>' +
+        '<td class="ao-gap"></td>' +
+        '<td class="ao-cell">' +
+          '<div class="ao-title ao-title-og">\u25B3 OG \u2014 Oreille Gauche</div>' +
+          '<canvas id="canvas-og" width="340" height="480"></canvas>' +
+          '<div class="ao-leg"><span class="ao-leg-ca"><span class="ao-dot-ca"></span> CA</span>' +
+          '<span class="ao-leg-co"><span class="ao-dot-co"></span> CO</span></div>' +
+        '</td>' +
+      '</tr></table>' +
+    '</div>';
 
   frm.fields_dict.audiogramme_html.$wrapper.html(html);
 
-  // Init canvas after DOM is ready
   setTimeout(function () {
-    draw_audiogramme(frm, data);
-  }, 100);
+    var state = { type: "CA", data: data };
+    draw("canvas-od", data.right);
+    draw("canvas-og", data.left);
+    click(frm, "canvas-od", "right", state);
+    click(frm, "canvas-og", "left", state);
+    toolbar(frm, state);
+    setbtn(state);
+  }, 50);
 }
 
-function build_audiogramme_ui(data) {
-  var od_count = data.od ? data.od.length : 0;
-  var og_count = data.og ? data.og.length : 0;
+function draw(id, ear) {
+  var c = document.getElementById(id);
+  if (!c) return;
+  var ctx = c.getContext("2d");
+  var W = c.width, H = c.height;
+  var L = 50, R = 16, T = 40, B = 30;
+  var pW = W - L - R, pH = H - T - B;
 
-  return (
-    '<div class="audiometrie-container">' +
-    '<div class="audiometrie-toolbar">' +
-    '  <div class="audiometrie-legend">' +
-    '    <span class="legend-item legend-od">&#9679; OD (Droite) — ' +
-    od_count +
-    " points</span>" +
-    '    <span class="legend-item legend-og">&#10005; OG (Gauche) — ' +
-    og_count +
-    " points</span>" +
-    "  </div>" +
-    '  <div class="audiometrie-actions">' +
-    '    <button class="btn btn-xs btn-default" id="btn-mode-od" style="font-weight:bold;color:#e74c3c;">OD</button>' +
-    '    <button class="btn btn-xs btn-default" id="btn-mode-og" style="font-weight:bold;color:#3498db;">OG</button>' +
-    '    <button class="btn btn-xs btn-danger" id="btn-clear-audio">Effacer tout</button>' +
-    '    <button class="btn btn-xs btn-success" id="btn-save-audio">Sauvegarder</button>' +
-    "  </div>" +
-    "</div>" +
-    '<div class="audiometrie-canvas-wrapper">' +
-    '  <canvas id="audiometrie-canvas" width="800" height="500"></canvas>' +
-    "</div>" +
-    "</div>"
-  );
-}
-
-function draw_audiogramme(frm, data) {
-  var canvas = document.getElementById("audiometrie-canvas");
-  if (!canvas) return;
-  var ctx = canvas.getContext("2d");
-
-  // Standard audiogram frequencies (Hz)
-  var frequencies = [125, 250, 500, 1000, 2000, 4000, 8000];
-  // dB HL range
-  var db_levels = [];
-  for (var d = -10; d <= 120; d += 10) {
-    db_levels.push(d);
-  }
-
-  var W = canvas.width;
-  var H = canvas.height;
-  var PAD_LEFT = 60;
-  var PAD_RIGHT = 30;
-  var PAD_TOP = 30;
-  var PAD_BOTTOM = 50;
-
-  var plotW = W - PAD_LEFT - PAD_RIGHT;
-  var plotH = H - PAD_TOP - PAD_BOTTOM;
-
-  // State
-  var current_mode = "od"; // 'od' or 'og'
-  var points = { od: data.od || [], og: data.og || [] };
-
-  // Clear canvas
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, W, H);
 
-  // Draw grid
-  ctx.strokeStyle = "#e0e0e0";
+  // Normal zone
+  ctx.fillStyle = "rgba(200,235,200,0.3)";
+  ctx.fillRect(L, T, pW, (2 / (DBS.length - 1)) * pH);
+
+  // Grid
+  ctx.strokeStyle = "#e5e7eb";
   ctx.lineWidth = 0.5;
-
-  // Vertical grid lines (frequency)
-  for (var i = 0; i < frequencies.length; i++) {
-    var x = PAD_LEFT + (i / (frequencies.length - 1)) * plotW;
-    ctx.beginPath();
-    ctx.moveTo(x, PAD_TOP);
-    ctx.lineTo(x, PAD_TOP + plotH);
-    ctx.stroke();
+  for (var i = 0; i < FREQS.length; i++) {
+    var x = L + (i / (FREQS.length - 1)) * pW;
+    ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, T + pH); ctx.stroke();
+  }
+  for (var j = 0; j < DBS.length; j++) {
+    var y = T + (j / (DBS.length - 1)) * pH;
+    ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(L + pW, y); ctx.stroke();
   }
 
-  // Horizontal grid lines (dB)
-  for (var j = 0; j < db_levels.length; j++) {
-    var y = PAD_TOP + (j / (db_levels.length - 1)) * plotH;
-    ctx.beginPath();
-    ctx.moveTo(PAD_LEFT, y);
-    ctx.lineTo(PAD_LEFT + plotW, y);
-    ctx.stroke();
-  }
-
-  // Draw axes
-  ctx.strokeStyle = "#333";
+  // Border
+  ctx.strokeStyle = "#374151";
   ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(PAD_LEFT, PAD_TOP);
-  ctx.lineTo(PAD_LEFT, PAD_TOP + plotH);
-  ctx.lineTo(PAD_LEFT + plotW, PAD_TOP + plotH);
-  ctx.stroke();
+  ctx.strokeRect(L, T, pW, pH);
 
-  // X-axis labels (frequencies)
-  ctx.fillStyle = "#333";
-  ctx.font = "12px Arial";
+  // Hz top labels
+  ctx.fillStyle = "#374151";
+  ctx.font = "bold 11px Arial,sans-serif";
   ctx.textAlign = "center";
-  for (var i = 0; i < frequencies.length; i++) {
-    var x = PAD_LEFT + (i / (frequencies.length - 1)) * plotW;
-    ctx.fillText(frequencies[i] + " Hz", x, PAD_TOP + plotH + 20);
+  for (var i = 0; i < FREQS.length; i++) {
+    ctx.fillText(FREQS[i], L + (i / (FREQS.length - 1)) * pW, T - 10);
   }
+  ctx.font = "bold 12px Arial,sans-serif";
+  ctx.fillText("Fr\u00e9quence (Hz)", L + pW / 2, T - 28);
 
-  // X-axis title
-  ctx.font = "bold 13px Arial";
-  ctx.fillText("Fréquence (Hz)", PAD_LEFT + plotW / 2, PAD_TOP + plotH + 40);
-
-  // Y-axis labels (dB)
-  ctx.font = "11px Arial";
+  // dB left labels
+  ctx.font = "10px Arial,sans-serif";
   ctx.textAlign = "right";
-  for (var j = 0; j < db_levels.length; j++) {
-    var y = PAD_TOP + (j / (db_levels.length - 1)) * plotH;
-    ctx.fillText(db_levels[j] + " dB", PAD_LEFT - 8, y + 4);
+  for (var j = 0; j < DBS.length; j++) {
+    ctx.fillText(DBS[j], L - 8, T + (j / (DBS.length - 1)) * pH + 4);
   }
-
-  // Y-axis title
   ctx.save();
-  ctx.translate(15, PAD_TOP + plotH / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.font = "bold 13px Arial";
+  ctx.font = "bold 11px Arial,sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("Seuil auditif (dB HL)", 0, 0);
+  ctx.translate(14, T + pH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("dB HL", 0, 0);
   ctx.restore();
 
-  // Helper: convert (freq, db) to canvas coords
-  function toCanvas(freq, db) {
-    var fi = frequencies.indexOf(freq);
-    if (fi === -1) fi = frequencies.indexOf(closest_freq(freq));
-    var di = db_levels.indexOf(db);
-    if (di === -1) di = db_levels.indexOf(closest_db(db));
-    var x = PAD_LEFT + (fi / (frequencies.length - 1)) * plotW;
-    var y = PAD_TOP + (di / (db_levels.length - 1)) * plotH;
-    return { x: x, y: y };
+  // 20 dB line
+  var y20 = T + (2 / (DBS.length - 1)) * pH;
+  ctx.strokeStyle = "#9ca3af";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([6, 3]);
+  ctx.beginPath(); ctx.moveTo(L, y20); ctx.lineTo(L + pW, y20); ctx.stroke();
+  ctx.setLineDash([]);
+
+  function xy(f, db) {
+    var fi = FREQS.indexOf(f);
+    var di = DBS.indexOf(db);
+    if (di < 0) { di = 0; var md = 999; for (var j = 0; j < DBS.length; j++) { var dd = Math.abs(db - DBS[j]); if (dd < md) { md = dd; di = j; } } }
+    return { x: L + (fi / (FREQS.length - 1)) * pW, y: T + (di / (DBS.length - 1)) * pH };
   }
 
-  function closest_freq(f) {
-    var best = frequencies[0];
-    var minDist = Math.abs(f - best);
-    for (var i = 1; i < frequencies.length; i++) {
-      var dist = Math.abs(f - frequencies[i]);
-      if (dist < minDist) {
-        minDist = dist;
-        best = frequencies[i];
-      }
-    }
-    return best;
-  }
-
-  function closest_db(d) {
-    var best = db_levels[0];
-    var minDist = Math.abs(d - best);
-    for (var j = 1; j < db_levels.length; j++) {
-      var dist = Math.abs(d - db_levels[j]);
-      if (dist < minDist) {
-        minDist = dist;
-        best = db_levels[j];
-      }
-    }
-    return best;
-  }
-
-  // Draw OD (red circles, solid line)
-  if (points.od.length > 0) {
-    ctx.strokeStyle = "#e74c3c";
-    ctx.lineWidth = 2;
+  // CA
+  var ca = ear.CA || {};
+  var cf = Object.keys(ca).map(Number).sort(function (a, b) { return a - b; });
+  if (cf.length) {
+    ctx.strokeStyle = CA_COLOR; ctx.lineWidth = 2;
     ctx.beginPath();
-    for (var i = 0; i < points.od.length; i++) {
-      var p = toCanvas(points.od[i].f, points.od[i].d);
-      if (i === 0) ctx.moveTo(p.x, p.y);
-      else ctx.lineTo(p.x, p.y);
-    }
+    cf.forEach(function (f, i) { var p = xy(f, ca[f]); i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); });
     ctx.stroke();
-
-    ctx.fillStyle = "#e74c3c";
-    for (var i = 0; i < points.od.length; i++) {
-      var p = toCanvas(points.od[i].f, points.od[i].d);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 5, 0, 2 * Math.PI);
-      ctx.fill();
-    }
+    cf.forEach(function (f) {
+      var p = xy(f, ca[f]);
+      ctx.strokeStyle = CA_COLOR; ctx.lineWidth = 2; ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+    });
   }
 
-  // Draw OG (blue crosses, dashed line)
-  if (points.og.length > 0) {
-    ctx.strokeStyle = "#3498db";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 3]);
+  // CO
+  var co = ear.CO || {};
+  var cof = Object.keys(co).map(Number).sort(function (a, b) { return a - b; });
+  if (cof.length) {
+    ctx.strokeStyle = CO_COLOR; ctx.lineWidth = 2; ctx.setLineDash([6, 3]);
     ctx.beginPath();
-    for (var i = 0; i < points.og.length; i++) {
-      var p = toCanvas(points.og[i].f, points.og[i].d);
-      if (i === 0) ctx.moveTo(p.x, p.y);
-      else ctx.lineTo(p.x, p.y);
-    }
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.strokeStyle = "#3498db";
+    cof.forEach(function (f, i) { var p = xy(f, co[f]); i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); });
+    ctx.stroke(); ctx.setLineDash([]);
     ctx.lineWidth = 2.5;
-    for (var i = 0; i < points.og.length; i++) {
-      var p = toCanvas(points.og[i].f, points.og[i].d);
-      var s = 6;
+    cof.forEach(function (f) {
+      var p = xy(f, co[f]); var s = 5;
+      ctx.strokeStyle = CO_COLOR;
       ctx.beginPath();
-      ctx.moveTo(p.x - s, p.y - s);
-      ctx.lineTo(p.x + s, p.y + s);
       ctx.moveTo(p.x + s, p.y - s);
+      ctx.lineTo(p.x - s, p.y - s);
       ctx.lineTo(p.x - s, p.y + s);
+      ctx.lineTo(p.x + s, p.y + s);
       ctx.stroke();
-    }
+    });
   }
 
-  // Click handler — place point
-  canvas.onclick = function (e) {
-    var rect = canvas.getBoundingClientRect();
-    var mx = e.clientX - rect.left;
-    var my = e.clientY - rect.top;
+  if (!cf.length && !cof.length) {
+    ctx.fillStyle = "#9ca3af";
+    ctx.font = "14px Arial,sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Aucune donn\u00e9e disponible", L + pW / 2, T + pH / 2);
+  }
 
-    // Find closest frequency and dB
-    var best_f = frequencies[0];
-    var best_d = db_levels[0];
-    var minDist = Infinity;
+  c._L = L; c._T = T; c._pW = pW; c._pH = pH;
+}
 
-    for (var i = 0; i < frequencies.length; i++) {
-      for (var j = 0; j < db_levels.length; j++) {
-        var p = toCanvas(frequencies[i], db_levels[j]);
-        var dist = Math.sqrt(
-          (mx - p.x) * (mx - p.x) + (my - p.y) * (my - p.y)
-        );
-        if (dist < minDist) {
-          minDist = dist;
-          best_f = frequencies[i];
-          best_d = db_levels[j];
-        }
+function click(frm, id, key, st) {
+  var c = document.getElementById(id);
+  if (!c) return;
+  c.onclick = function (e) {
+    var r = c.getBoundingClientRect();
+    var sx = c.width / r.width, sy = c.height / r.height;
+    var mx = (e.clientX - r.left) * sx, my = (e.clientY - r.top) * sy;
+    var bf = FREQS[0], bd = DBS[0], md = Infinity;
+    for (var i = 0; i < FREQS.length; i++) {
+      for (var j = 0; j < DBS.length; j++) {
+        var px = c._L + (i / (FREQS.length - 1)) * c._pW;
+        var py = c._T + (j / (DBS.length - 1)) * c._pH;
+        var dd = Math.sqrt((mx - px) * (mx - px) + (my - py) * (my - py));
+        if (dd < md) { md = dd; bf = FREQS[i]; bd = DBS[j]; }
       }
     }
+    if (md > 30) return;
+    st.data[key][st.type] = st.data[key][st.type] || {};
+    st.data[key][st.type][bf] = bd;
+    draw(id, st.data[key]);
+  };
+}
 
-    if (minDist > 30) return; // too far from any grid point
+function toolbar(frm, st) {
+  var bca = document.getElementById("btn-ca");
+  var bco = document.getElementById("btn-co");
+  if (bca) bca.onclick = function () { st.type = "CA"; setbtn(st); };
+  if (bco) bco.onclick = function () { st.type = "CO"; setbtn(st); };
 
-    // Remove existing point at same frequency for current ear
-    var ear = current_mode;
-    points[ear] = points[ear].filter(function (p) {
-      return p.f !== best_f;
-    });
-
-    // Add new point
-    points[ear].push({ f: best_f, d: best_d });
-
-    // Sort by frequency
-    points[ear].sort(function (a, b) {
-      return a.f - b.f;
-    });
-
-    // Redraw
-    draw_points_only(ctx, points, frequencies, db_levels, PAD_LEFT, PAD_TOP, plotW, plotH);
+  var bs = document.getElementById("btn-save-audio");
+  if (bs) bs.onclick = function () {
+    frm.doc.audiogramme_json = JSON.stringify(st.data);
+    frm.save();
+    frappe.show_alert({ message: "Audiogramme sauvegard\u00e9", indicator: "green" });
   };
 
-  // Draw points only (for interactive updates)
-  function draw_points_only(ctx2, pts, freqs, dbs, pl, pt, pw, ph) {
-    // Redraw whole thing for simplicity
-    draw_audiogramme(frm, {
-      od: points.od,
-      og: points.og,
-    });
-  }
-
-  // Toolbar handlers
-  var btnOD = document.getElementById("btn-mode-od");
-  var btnOG = document.getElementById("btn-mode-og");
-  var btnSave = document.getElementById("btn-save-audio");
-  var btnClear = document.getElementById("btn-clear-audio");
-
-  if (btnOD) {
-    btnOD.onclick = function () {
-      current_mode = "od";
-      btnOD.className = "btn btn-xs btn-danger";
-      btnOG.className = "btn btn-xs btn-default";
-    };
-  }
-  if (btnOG) {
-    btnOG.onclick = function () {
-      current_mode = "og";
-      btnOG.className = "btn btn-xs btn-primary";
-      btnOD.className = "btn btn-xs btn-default";
-    };
-  }
-  if (btnSave) {
-    btnSave.onclick = function () {
-      frm.doc.audiogramme_json = JSON.stringify({
-        od: points.od,
-        og: points.og,
-      });
+  var bc = document.getElementById("btn-clear-audio");
+  if (bc) bc.onclick = function () {
+    if (confirm("Effacer tout l'audiogramme ?")) {
+      st.data.right = { CA: {}, CO: {} };
+      st.data.left = { CA: {}, CO: {} };
+      frm.doc.audiogramme_json = JSON.stringify(st.data);
       frm.save();
-      frappe.show_alert({
-        message: "Audiogramme sauvegardé",
-        indicator: "green",
-      });
-    };
-  }
-  if (btnClear) {
-    btnClear.onclick = function () {
-      if (confirm("Effacer tout l'audiogramme ?")) {
-        points = { od: [], og: [] };
-        frm.doc.audiogramme_json = JSON.stringify(points);
-        frm.save();
-        draw_audiogramme(frm, points);
-      }
-    };
-  }
+      draw("canvas-od", st.data.right);
+      draw("canvas-og", st.data.left);
+    }
+  };
+}
 
-  // Set initial button states
-  if (btnOD) btnOD.className = "btn btn-xs btn-danger";
-  if (btnOG) btnOG.className = "btn btn-xs btn-default";
+function setbtn(st) {
+  var bca = document.getElementById("btn-ca");
+  var bco = document.getElementById("btn-co");
+  if (bca) bca.className = "ao-btn ao-ca" + (st.type === "CA" ? " active" : "");
+  if (bco) bco.className = "ao-btn ao-co" + (st.type === "CO" ? " active" : "");
 }
