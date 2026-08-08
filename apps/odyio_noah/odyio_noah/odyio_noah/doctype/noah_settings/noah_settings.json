@@ -1,0 +1,67 @@
+{
+ "name": "Noah Settings",
+ "module": "Odyio Noah",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "istable": 0,
+ "issingle": 1,
+ "fields": [
+  {
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Activer Noah Mobile"
+  },
+  {
+   "fieldname": "section_connection",
+   "fieldtype": "Section Break",
+   "label": "Connexion Noah Mobile"
+  },
+   {
+    "fieldname": "noah_mobile_url",
+    "fieldtype": "Data",
+    "label": "URL Noah Mobile",
+    "description": "Ex: http://192.168.1.10:8843/noah. Si laissé vide, la valeur de site_config.json (noah_mobile_url) est utilisée.",
+    "in_list_view": 1
+   },
+  {
+   "fieldname": "api_key",
+   "fieldtype": "Password",
+   "label": "Clé API Noah Mobile",
+   "description": "Générée dans Noah → Setup → Administration → Noah Mobile Configuration"
+  },
+  {
+   "fieldname": "noah_mobile_alias",
+   "fieldtype": "Data",
+   "label": "Alias Noah Mobile",
+   "description": "Ex: odyio-clinic"
+  },
+  {
+   "fieldname": "section_actions",
+   "fieldtype": "Section Break",
+   "label": "Actions"
+  },
+  {
+   "fieldname": "last_connection_test",
+   "fieldtype": "Data",
+   "label": "Dernier test de connexion",
+   "read_only": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 0,
+   "cancel": 0,
+   "amend": 0,
+   "report": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "email": 1
+  }
+ ]
+}

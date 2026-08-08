@@ -1,137 +1,102 @@
-# Odyio — Progrès Récent (Juillet 2026)
+# Odyio — Progrès Récent (Août 2026)
 
 ## Résumé
 
 Projet de SaaS de gestion pour cabinet d'audioprothésiste en Tunisie. Stack : Frappe/ERPNext v15 + PostgreSQL 16 + Redis 7 sur WSL2 Ubuntu 24.04. Toute l'UI est dans Frappe Desk (pas de frontend séparé).
 
-Les 4 dernières semaines ont livré : un outil d'audiogramme clinique complet, la suppression du module CNAM, et le nettoyage du référentiel.
+Les dernières sessions ont livré : l'outil d'audiogramme clinique (point libre, gomme, déplacement, centrage plein écran) et le module **odyio_noah** (intégration Noah Mobile REST API, déployé et testé).
 
 ---
 
-## 1. Outil Audiogramme Clinique (odea_audiometrie)
+## 1. Outil Audiogramme Clinique — évolutions (validées)
 
-### Objectif
+Suite aux retours utilisateur, l'outil a été finalisé :
 
-Remplacer la saisie texte par un canvas graphique interactif respectant les normes cliniques d'audiologie — directement dans Frappe Desk, sans bibliothèque externe.
+- **Barre d'outils** : boutons `+ Point` / `Gomme` / `Effacer tout` / `Sauvegarder`
+- **Placement libre** : clic pour poser un point n'importe où dans la grille (axe fréquence logarithmique continu), glisser pour déplacer un point existant
+- **Gomme outil** : mode persistant — clic sur un point (survolé en rouge hachuré) pour le supprimer
+- **Lecture hover** : ligne verticale + pastille `1000 Hz — 45 dB` (`readout-od`/`readout-og`, style `.ao-readout`)
+- **Toiles agrandies** : 640×640, espace `.ao-gap` 12px, `min-width: 960px`
+- **Centrage plein écran** : `fitWrap()` — `position: fixed`, `left: 50%`, `translateX(-50%)`, div spacer, repositionnement scroll/resize (contourne `overflow:hidden` de `.layout-main-section.frappe-card`)
 
-### Format de données
-
-```json
-{
-  "right": {
-    "CA": { "250": 10, "500": 20, "1000": 40, "2000": 60, "4000": 80, "8000": 100 },
-    "CO": { "500": 25, "1000": 45 }
-  },
-  "left": {
-    "CA": {},
-    "CO": {}
-  }
-}
-```
-
-CA = conduction aérienne (air), CO = conduction osseuse (bone).
-Stocké dans PostgreSQL comme texte JSON dans le champ `audiogramme_json`.
-
-### Architecture client-serveur
-
-| Couche | Technologie | Rôle |
-|--------|-------------|------|
-| DocType schema | `audiogramme.json` | Définit la structure (patient, date, type, JSON, HTML field) |
-| Contrôleur serveur | `audiogramme.py` (14 lignes) | `validate()` → remplit `patient_name` depuis Customer ; `before_save()` → enregistre `created_by` |
-| Moteur canvas | `audiogramme.js` (273 lignes) | Canvas 2D pur, exécuté dans Frappe Desk |
-| Styles | `audiometrie.css` (153 lignes) | Mise en page table, barre d'outils, légendes |
-
-### Fonctionnalités du canvas
-
-**Deux toiles côte à côte** — OD (droite, bleue) + OG (gauche, rouge) :
-- `<table>` avec `table-layout: fixed` + `min-width: 720px` (contourne les contraintes de largeur de Frappe)
-
-**Axes cliniques :**
-- dB inversé : 0 dB en haut → 130 dB en bas, pas de 10
-- Fréquences : 250, 500, 1000, 2000, 4000, 8000 Hz en haut
-- Zone verte (0-20 dB) pour l'audition normale
-- Ligne de référence 20 dB en tirets
-
-**Mode CA (conduction aérienne) :** cercles bleus `#2563EB`, ligne continue
-**Mode CO (conduction osseuse) :** crochets rouges `#DC2626` `[ ]`, ligne tiretée
-
-**Interaction :** clic sur la toile → placement au point de grille le plus proche (tolérance 30px → pas de placement accidentel)
-**Barre d'outils :** boutons CA/CO (toggle), Sauvegarder (sérialise + `frm.save()`), Effacer (confirmation + reset)
-
-**Migration :** l'ancien format `{od: [{f: 1000, d: 40}], og: []}` est automatiquement converti au nouveau format au chargement.
-
-### Correction clé — bug d'affichage
-
-Le `display: flex` ne fonctionnait pas dans le champ HTML de Frappe — la largeur du formulaire forçait le passage en colonne unique. Solution : passage à `<table>` avec `table-layout: fixed`, `min-width: 720px !important`, enveloppe avec débordement scrollable.
+Fichiers : `apps/odyio_audiometrie/.../audiogramme.js`, `public/css/audiometrie.css`.
 
 ---
 
-## 2. Suppression complète du module CNAM (odea_cnam)
+## 2. Module odyio_noah — intégration Noah Mobile (déployé et testé)
 
-### Ce qui a été supprimé
+### Architecture
 
-25 fichiers, 1333 lignes supprimées :
-- App Frappe complète `apps/odyio_cnam/`
-- DocTypes « CNAM Demande », « CNAM Document »
-- Print formats personnalisés (odyio_bl.html, odyio_facture.html, odyio_cnam_dossier.html)
-- Script `build_workspace.py` (création du workspace Odyio avec 9 cartes, 9 raccourcis, 45 liens)
-- Workspace JSON pré-généré
-- Commandes CLI (création de print formats, dossiers CNAM)
-- Configuration du module, hooks, patches
+| Fichier | Rôle |
+|---------|------|
+| `odyio_noah/doctype/noah_settings/` | Single — URL/clé API Noah Mobile + bouton « Tester la connexion » |
+| `odyio_noah/doctype/noah_session/` | Historique des séances importées (autoname `noah_session_id`, permissions Sales) |
+| `noah_mobile_client.py` | Client REST Bearer ; config : Noah Settings → `site_config.json` |
+| `api.py` | Endpoints whitelistés `test_noah_connection`, `sync_from_noah`, `push_to_noah` |
+| `public/js/customer_noah.js` | Boutons « Sync from Noah » / « Push to Noah », indicateur d'état, tableaux audiogramme |
+| `install.py` + `patches/noah_custom_fields.py` | 7 champs custom Customer (idempotents) |
 
-### Mise à jour de la documentation
+### Champs personnalisés Customer
 
-- README.md : retrait de l'architecture CNAM, de la section Phase 2, de la table des DocTypes, des champs personnalisés CNAM, des étapes d'installation CNAM, de la section de développement
-- `setup/create_custom_apps.sh` : retrait de la création et installation de odyio_cnam
+`noah_patient_id`, `noah_sync_status` (SYNCED/OUT_OF_SYNC/NEVER_SYNCED/SYNC_ERROR), `noah_last_sync`, `audiogram_left`, `audiogram_right`, `ear_side`, `dob`.
 
-### Pourquoi
+### Flux vérifié (mock Noah sur `:8843`)
 
-Décision de recentrer le MVP sur l'audiométrie. Le CNAM sera réintégré ultérieurement comme fonctionnalité indépendante ou via un workflow ERPNext standard.
+1. `test_noah_connection` → succès (HTTP + console)
+2. `push_to_noah` → création patient (firstName/lastName/dateOfBirth/phone/email), `noah_patient_id` renseigné, statut SYNCED
+3. `sync_from_noah` → pull démographie + audiogramme (left/right, ear_side BILATERAL) + import sessions Noah Session (idempotent par `noah_session_id`)
+4. Push audiogramme (JSON dicts PG) → succès
 
----
+### Bugs corrigés en cours de route
 
-## 3. État actuel du dépôt
+1. **Patches.txt** : Frappe v15 exige un fichier de patch avec `def execute()` (`odyio_noah.patches.noah_custom_fields`), pas `module.function` nu
+2. **Bug Frappe v15 + PostgreSQL** : `validate_link_filters` (`frappe/core/doctype/doctype/doctype.py`) fait `json.loads()` sur `link_filters` qui est déjà une liste (colonne `json`) → patche côté Frappe (accepte liste) — bloque sinon TOUTE création de Custom Field sur Customer
+3. **`mobile_no`/`email_id` Customer** : champs `read_only` fetchés depuis le Contact primaire → `_sync_contact_info()` met à jour le Contact (avec gestion `is_primary` unique) + `frappe.db.set_value` après le `save()` (sinon TimestampMismatch)
+4. **JSON fields PG** : `audiogram_left` revient en dict → `_to_dict()` partout
+5. **`noah_mobile_url` `reqd`** retiré (fallback `site_config.json` possible sans erreur au save des Settings)
 
-### Commits récents (chronologique inverse)
+### Vérifications serveur
 
-| Hash | Message | Fichiers |
-|------|---------|----------|
-| `2a3f2a6` | refactor: remove entire odyio_cnam module | 25 fichiers supprimés |
-| `4374c94` | chore: ignore Redis dump.rdb | .gitignore |
-| `8a9096f` | refactor: rewrite audiogramme with clinical dual-ear format | 2 fichiers (+314/-325) |
-| `978ee9b` | feat: add odyio_audiometrie app with Audiogramme DocType | 15 fichiers (création) |
+- `bench --site odyio.localhost migrate` OK (DocTypes + patch custom fields loggés dans Patch Log)
+- `bench build` OK
+- HTTP 200, endpoints whitelistés OK (session admin)
+- `__js` du formulaire Customer contient `customer_noah.js` (vérifié via `frappe.desk.form.load.getdoctype`)
 
-### Structure actuelle
+### Utilisation
 
-```
-audioprosthetist_SaaS/
-├── apps/
-│   └── odyio_noah/              # Placeholder — sync Noah ES (phase 3)
-├── apps/odyio_audiometrie/      # App active — Audiogramme
-│   ├── odyio_audiometrie/
-│   │   ├── hooks.py             # app_name, app_include_css
-│   │   ├── modules.txt          # "Audiometrie"
-│   │   ├── audiometrie/
-│   │   │   └── doctype/audiogramme/
-│   │   │       ├── audiogramme.json  # Schéma (patient, date, JSON, HTML field)
-│   │   │       ├── audiogramme.py    # Contrôleur serveur
-│   │   │       └── audiogramme.js    # Moteur canvas (273 lignes, coeur)
-│   │   └── public/
-│   │       ├── css/audiometrie.css   # Styles (153 lignes)
-│   │       └── js/audiometrie.js     # Point d'entrée (stub)
-│   ├── pyproject.toml
-│   └── setup.py
-├── archive/                      # Ancien codebase (référence)
-├── setup/
-│   └── create_custom_apps.sh     # Script d'installation
-└── README.md
+```bash
+# Config (priorité Noah Settings, puis site_config.json)
+cd /home/odyio/odyio-bench-pg
+nano sites/odyio.localhost/site_config.json   # noah_mobile_url, noah_mobile_api_key
+# UI : Desk → Odyio Noah → Noah Settings → « Tester la connexion »
+# Formulaire Customer → bouton « Noah » → Sync from Noah / Push to Noah
 ```
 
 ---
 
-## 4. Environnement de développement (WSL2)
+## 3. Prochaines étapes
 
-### Configuration
+1. **Test réel Noah 4.9.1+** — pointer `noah_mobile_url` vers la machine Noah (port 8843, réseau local) et valider les payloads réels (format exact des endpoints Noah Mobile à confirmer)
+2. **Workspace Odyio** — reconstruire après suppression de odyio_cnam
+3. **Impression PDF audiogramme** — courbes + données patient
+4. **Commit pending** : audiogramme (gomme/déplacement/centrage) + module odyio_noah à committer et pousser
+
+---
+
+## 4. État du dépôt
+
+| Hash | Message |
+|------|---------|
+| `799f3e6` | feat: add odyio_ocr module + audiogramme free placement (poussé) |
+| `2a3f2a6` | refactor: remove entire odyio_cnam module |
+| `4374c94` | chore: ignore Redis dump.rdb |
+| `8a9096f` | refactor: rewrite audiogramme with clinical dual-ear format |
+
+Branche : `master`. Working tree : audiogramme.js/css + odyio_noah (à committer).
+
+---
+
+## 5. Environnement de développement (WSL2)
 
 | Composant | Valeur |
 |-----------|--------|
@@ -139,67 +104,22 @@ audioprosthetist_SaaS/
 | Bench | `/home/odyio/odyio-bench-pg` |
 | Utilisateur bench | `odyio` |
 | PostgreSQL | user `odyio`, db `odyio_db`, port 5432 |
-| Redis | cache=6380, queue=6381, socketio=6382 |
+| Redis | cache=6380, queue=6381, socketio=6382 (6379 = daemon, ne pas toucher) |
 | Site | `http://odyio.localhost:8000` |
-| Admin | `admin@odyio.tn` / `Odyio@2025!` |
-| Apps installées | frappe, erpnext, odyio_noah, odyio_audiometrie |
+| Admin | `Administrator` / `admin` |
+| Apps | frappe, erpnext, odyio_noah, odyio_audiometrie, odyio_ocr |
 
-### Problèmes résolus
+### Problèmes résolus (rappel)
 
-1. **Workspace invisible** → `Workspace.__init__()` dans `frappe/desk/desktop.py` filtre par `allowed_modules`. Solution : ajout du rôle « Workspace Manager » à l'utilisateur.
-2. **Permission Customer refusée** → les permissions par défaut du DocType Customer n'incluent pas System Manager. Solution : ajout de tous les rôles ERP (Sales, Accounts, Stock, Purchase).
-3. **Module CNAM supprimé** → le workspace était lié au module « Odyio CNAM ». Après suppression, le workspace n'est plus accessible — à reconstruire.
-
-### Actions restantes sur le serveur
-
-```bash
-# Supprimer l'ancienne app CNAM du site
-bench --site odyio.localhost remove-app odyio_cnam
-bench remove-app odyio_cnam
-
-# Réinstaller l'app audiometrie
-bench --site odyio.localhost install-app odyio_audiometrie
-bench --site odyio.localhost migrate
-bench build
-```
+1. **Workspace invisible** → ajouter le rôle « Workspace Manager » à l'utilisateur.
+2. **Permission Customer refusée** → ajouter les rôles ERP (Sales, Accounts, Stock, Purchase).
+3. **`link_filters` PostgreSQL** → patch Frappe requis (voir section 2).
 
 ---
 
-## 5. Prochaines étapes
+## 6. URLs utiles
 
-### Court terme
+- **Audiogramme :** `http://odyio.localhost:8000/app/audiogramme`
+- **Noah Settings :** `http://odyio.localhost:8000/app/noah-settings`
+- **Admin Desk :** `http://odyio.localhost:8000` login `Administrator` / `admin`
 
-1. **Reconstruire le workspace Odyio** — le workspace JSON était dans odyio_cnam, supprimé. Besoin de le recréer dans odyio_audiometrie ou via l'UI Frappe.
-2. **Créer le rôle « Audiometriste »** — présent dans les permissions du DocType mais pas encore créé sur le serveur.
-3. **Responsive design mobile** — les toiles sont 340×480 fixes. À 768px, passage en colonne unique (au lieu du scroll horizontal actuel).
-4. **Ajouter les champs CNAM restants sur Customer** — `cnam_number`, `cnam_affiliation_type`, `cnam_expiry` (si besoin métier).
-
-### Moyen terme
-
-5. **Noah ES Sync (Phase 3)** — app `odyio_noah` existante mais vide. Synchronisation bidirectionnelle avec Noah ES.
-6. **Marketplace B2B** — Catalogue produits fournisseurs, panier multi-fournisseurs.
-7. **Rapports d'audiogramme** — impression PDF de l'audiogramme avec les courbes et les données patient.
-8. **Tests** — tests unitaires Frappe pour le contrôleur serveur, tests d'intégration pour l'API REST.
-
----
-
-## 6. Métriques clés
-
-| Métrique | Valeur |
-|----------|--------|
-| Lignes de code JS (canvas) | 273 |
-| Lignes de code CSS | 153 |
-| Lignes de code Python (serveur) | 14 |
-| Fichiers supprimés (CNAM) | 25 |
-| Lignes supprimées (CNAM) | 1333 |
-| Commits sur master | 11 |
-| Branche | `master` — à jour avec `origin/master` |
-| Dépôt | `https://github.com/Amin8382/audioprosthetist_SaaS` |
-
----
-
-## 7. Captures d'écran / URLs
-
-- **Formulaire Audiogramme :** `http://odyio.localhost:8000/app/audiogramme` → cliquer « Commencer l'audiogramme »
-- **Workspace Odyio :** `http://odyio.localhost:8000/app/workspace/odyio` (nécessite reconstruction)
-- **Admin Desk :** `http://odyio.localhost:8000` login `admin@odyio.tn` / `Odyio@2025!`

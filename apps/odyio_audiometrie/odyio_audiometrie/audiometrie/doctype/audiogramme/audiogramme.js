@@ -65,14 +65,18 @@ function render_audiogramme(frm) {
           '<button class="ao-btn ao-co" id="btn-co"><span class="ao-dot-co"></span> CO (Os)</button>' +
         '</div>' +
         '<div class="ao-bar-r">' +
-          '<button class="btn btn-xs btn-danger" id="btn-clear-audio">Effacer</button>' +
+          '<div class="ao-tools">' +
+            '<button class="ao-btn active" id="btn-add" title="Cliquer pour placer un point, glisser pour le d\u00e9placer">+ Point</button>' +
+            '<button class="ao-btn" id="btn-eraser" title="Cliquer sur un point pour l\'effacer">Gomme</button>' +
+          '</div>' +
+          '<button class="btn btn-xs btn-danger" id="btn-clear-audio">Effacer tout</button>' +
           '<button class="btn btn-xs btn-success" id="btn-save-audio">Sauvegarder</button>' +
         '</div>' +
       '</div>' +
       '<table class="ao-table"><tr>' +
         '<td class="ao-cell">' +
           '<div class="ao-title ao-title-od">\u25B3 OD \u2014 Oreille Droite</div>' +
-          '<canvas id="canvas-od" width="460" height="640"></canvas>' +
+          '<canvas id="canvas-od" width="640" height="640"></canvas>' +
           '<div class="ao-readout" id="readout-od"></div>' +
           '<div class="ao-leg"><span class="ao-leg-ca"><span class="ao-dot-ca"></span> CA</span>' +
           '<span class="ao-leg-co"><span class="ao-dot-co"></span> CO</span></div>' +
@@ -80,7 +84,7 @@ function render_audiogramme(frm) {
         '<td class="ao-gap"></td>' +
         '<td class="ao-cell">' +
           '<div class="ao-title ao-title-og">\u25B3 OG \u2014 Oreille Gauche</div>' +
-          '<canvas id="canvas-og" width="460" height="640"></canvas>' +
+          '<canvas id="canvas-og" width="640" height="640"></canvas>' +
           '<div class="ao-readout" id="readout-og"></div>' +
           '<div class="ao-leg"><span class="ao-leg-ca"><span class="ao-dot-ca"></span> CA</span>' +
           '<span class="ao-leg-co"><span class="ao-dot-co"></span> CO</span></div>' +
@@ -91,15 +95,18 @@ function render_audiogramme(frm) {
   frm.fields_dict.audiogramme_html.$wrapper.html(html);
 
   setTimeout(function () {
-    var state = { type: "CA", data: data };
+    var state = { type: "CA", mode: "add", data: data };
     draw("canvas-od", data.right);
     draw("canvas-og", data.left);
-    click(frm, "canvas-od", "right", state);
-    click(frm, "canvas-og", "left", state);
+    bindCanvas("canvas-od", "right", state);
+    bindCanvas("canvas-og", "left", state);
     bindHover("canvas-od", "readout-od");
     bindHover("canvas-og", "readout-og");
     toolbar(frm, state);
     setbtn(state);
+    fitWrap();
+    bindFitResize();
+    setTimeout(fitWrap, 400);
   }, 50);
 }
 
@@ -229,21 +236,104 @@ function readFreqDb(L, T, pW, pH, mx, my) {
   return { freq: Math.round(freq), db: Math.round(db) };
 }
 
-function click(frm, id, key, st) {
+function coords(e, c) {
+  var r = c.getBoundingClientRect();
+  var mx = (e.clientX - r.left) * (c.width / r.width);
+  var my = (e.clientY - r.top) * (c.height / r.height);
+  return { mx: mx, my: my, L: c._L, T: c._T, pW: c._pW, pH: c._pH };
+}
+
+function inside(p) {
+  return p.mx >= p.L && p.mx <= p.L + p.pW && p.my >= p.T && p.my <= p.T + p.pH;
+}
+
+function findPoint(st, key, p) {
+  var best = null;
+  ["CA", "CO"].forEach(function (tp) {
+    var pts = st.data[key][tp] || {};
+    Object.keys(pts).forEach(function (f) {
+      var q = toXY(p.L, p.T, p.pW, p.pH, Number(f), pts[f]);
+      var dd = Math.sqrt((p.mx - q.x) * (p.mx - q.x) + (p.my - q.y) * (p.my - q.y));
+      if (!best || dd < best.dd) best = { tp: tp, f: Number(f), dd: dd, x: q.x, y: q.y };
+    });
+  });
+  return best && best.dd <= 12 ? best : null;
+}
+
+function placePoint(st, key, p) {
+  var rp = readFreqDb(p.L, p.T, p.pW, p.pH, p.mx, p.my);
+  st.data[key][st.type] = st.data[key][st.type] || {};
+  st.data[key][st.type][rp.freq] = rp.db;
+  return rp;
+}
+
+function removePoint(st, key, hit) {
+  var pts = st.data[key][hit.tp] || {};
+  delete pts[hit.f];
+}
+
+function bindCanvas(id, key, st) {
   var c = document.getElementById(id);
   if (!c) return;
-  c.onclick = function (e) {
-    var r = c.getBoundingClientRect();
-    var mx = (e.clientX - r.left) * (c.width / r.width);
-    var my = (e.clientY - r.top) * (c.height / r.height);
-    var L = c._L, T = c._T, pW = c._pW, pH = c._pH;
-    if (mx < L || mx > L + pW || my < T || my > T + pH) return;
-    var p = readFreqDb(L, T, pW, pH, mx, my);
-    st.data[key][st.type] = st.data[key][st.type] || {};
-    st.data[key][st.type][p.freq] = p.db;
+  c._hl = null;
+  var drag = null;
+
+  c.addEventListener("mousedown", function (e) {
+    var p = coords(e, c);
+    if (st.mode === "erase") {
+      var hit = findPoint(st, key, p);
+      if (hit) {
+        removePoint(st, key, hit);
+        draw(id, st.data[key]);
+        var rd = document.getElementById(id === "canvas-od" ? "readout-od" : "readout-og");
+        if (rd) {
+          rd.textContent = "Point supprim\u00e9";
+          setTimeout(function () { if (rd) rd.textContent = ""; }, 1200);
+        }
+      }
+      return;
+    }
+    var hit = findPoint(st, key, p);
+    if (hit) { drag = hit; return; }
+    if (!inside(p)) return;
+    var rp = placePoint(st, key, p);
     draw(id, st.data[key]);
-    drawTooltip(id, p.freq, p.db);
-  };
+    drawTooltip(id, rp.freq, rp.db);
+  });
+
+  c.addEventListener("mousemove", function (e) {
+    if (st.mode === "erase") highlight(st, key, c, id, e);
+    if (!drag) return;
+    var p = coords(e, c);
+    if (!inside(p)) return;
+    var old = drag.f;
+    delete st.data[key][drag.tp][old];
+    var rp = readFreqDb(p.L, p.T, p.pW, p.pH, p.mx, p.my);
+    st.data[key][drag.tp][rp.freq] = rp.db;
+    drag.f = rp.freq;
+    draw(id, st.data[key]);
+  });
+
+  c.addEventListener("mouseup", function () { drag = null; });
+  c.addEventListener("mouseleave", function () { drag = null; c._hl = null; });
+}
+
+function highlight(st, key, c, id, e) {
+  var p = coords(e, c);
+  var hit = findPoint(st, key, p);
+  var t = hit ? hit.tp + ":" + hit.f : null;
+  if (t === c._hl) return;
+  c._hl = t;
+  draw(id, st.data[key]);
+  if (!hit) return;
+  var ctx = c.getContext("2d");
+  ctx.strokeStyle = "#dc2626";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([4, 2]);
+  ctx.beginPath();
+  ctx.arc(hit.x, hit.y, 9, 0, 2 * Math.PI);
+  ctx.stroke();
+  ctx.setLineDash([]);
 }
 
 function bindHover(id, rid) {
@@ -285,11 +375,47 @@ function drawTooltip(id, f, db) {
   ctx.fillText(text, bx + 6, by + bh / 2 + 1);
 }
 
+function fitWrap() {
+  var wrap = document.querySelector(".ao-wrap");
+  if (!wrap) return;
+  var vw = window.innerWidth;
+  wrap.style.width = Math.min(vw - 24, 1900) + "px";
+  if (!wrap.__aoSpacer) {
+    var top0 = wrap.getBoundingClientRect().top;
+    var spacer = document.createElement("div");
+    spacer.style.height = wrap.offsetHeight + "px";
+    wrap.parentNode.insertBefore(spacer, wrap);
+    wrap.__aoSpacer = spacer;
+    wrap.__aoTop = top0;
+    wrap.style.position = "fixed";
+    wrap.style.left = "50%";
+    wrap.style.transform = "translateX(-50%)";
+    wrap.style.zIndex = "50";
+    if (!window.__aoScrollBound) {
+      window.__aoScrollBound = true;
+      window.addEventListener("scroll", fitWrap);
+    }
+  }
+  wrap.__aoSpacer.style.height = wrap.offsetHeight + "px";
+  wrap.style.top = wrap.__aoSpacer.getBoundingClientRect().top + "px";
+}
+
+function bindFitResize() {
+  if (window.__aoFitBound) return;
+  window.__aoFitBound = true;
+  window.addEventListener("resize", function () { fitWrap(); });
+}
+
 function toolbar(frm, st) {
   var bca = document.getElementById("btn-ca");
   var bco = document.getElementById("btn-co");
   if (bca) bca.onclick = function () { st.type = "CA"; setbtn(st); };
   if (bco) bco.onclick = function () { st.type = "CO"; setbtn(st); };
+
+  var ba = document.getElementById("btn-add");
+  var be = document.getElementById("btn-eraser");
+  if (ba) ba.onclick = function () { st.mode = "add"; setbtn(st); };
+  if (be) be.onclick = function () { st.mode = "erase"; setbtn(st); };
 
   var bs = document.getElementById("btn-save-audio");
   if (bs) bs.onclick = function () {
@@ -316,4 +442,8 @@ function setbtn(st) {
   var bco = document.getElementById("btn-co");
   if (bca) bca.className = "ao-btn ao-ca" + (st.type === "CA" ? " active" : "");
   if (bco) bco.className = "ao-btn ao-co" + (st.type === "CO" ? " active" : "");
+  var ba = document.getElementById("btn-add");
+  var be = document.getElementById("btn-eraser");
+  if (ba) ba.className = "ao-btn" + (st.mode === "add" ? " active" : "");
+  if (be) be.className = "ao-btn" + (st.mode === "erase" ? " active" : "");
 }

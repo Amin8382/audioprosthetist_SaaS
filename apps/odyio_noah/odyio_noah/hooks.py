@@ -1,9 +1,17 @@
 app_name = "odyio_noah"
 app_title = "Odyio Noah"
 app_publisher = "Odyio Technologies"
-app_description = "Noah ES bidirectional sync"
+app_description = "Synchronisation bidirectionnelle Noah Mobile (REST API)"
 app_email = "contact@odyio.fr"
 app_license = "mit"
+
+# Installation
+# ------------
+after_install = "odyio_noah.install.after_install"
+
+# Include js in doctype views
+# ---------------------------
+doctype_js = {"Customer": "public/js/customer_noah.js"}
 
 # Apps
 # ------------------

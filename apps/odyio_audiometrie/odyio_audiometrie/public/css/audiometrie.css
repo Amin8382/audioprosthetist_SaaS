@@ -3,8 +3,8 @@
 /* Force full width inside Frappe form */
 .form-column .ao-wrap,
 .control-html .ao-wrap {
-  width: 100% !important;
-  min-width: 720px !important;
+  width: 100%;
+  min-width: 960px;
 }
 
 .ao-wrap {
@@ -40,6 +40,15 @@
 .ao-bar-r {
   display: flex;
   gap: 6px;
+  align-items: center;
+}
+
+.ao-tools {
+  display: flex;
+  gap: 4px;
+  margin-right: 6px;
+  padding-right: 8px;
+  border-right: 1px solid #d1d8dd;
 }
 
 .ao-btn {
@@ -54,6 +63,12 @@
 }
 
 .ao-btn:hover { border-color: #999; }
+
+.ao-btn.active {
+  border-color: #1f2937;
+  background: #111827;
+  color: #fff;
+}
 
 .ao-btn.active.ao-ca {
   color: #2563eb;
@@ -82,7 +97,7 @@
 }
 
 .ao-gap {
-  width: 24px;
+  width: 12px;
 }
 
 .ao-cell canvas {

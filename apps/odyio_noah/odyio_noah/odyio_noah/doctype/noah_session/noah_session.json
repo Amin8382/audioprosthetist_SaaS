@@ -1,0 +1,129 @@
+{
+ "name": "Noah Session",
+ "module": "Odyio Noah",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "autoname": "field:noah_session_id",
+ "naming_rule": "By fieldname",
+ "title_field": "noah_session_id",
+ "search_fields": "noah_session_id,patient,device_model",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "fields": [
+  {
+   "fieldname": "patient",
+   "fieldtype": "Link",
+   "label": "Patient",
+   "options": "Customer",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "noah_session_id",
+   "fieldtype": "Data",
+   "label": "Noah Session ID",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "session_date",
+   "fieldtype": "Date",
+   "label": "Session Date",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "session_type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "options": "AUDIOGRAM\nFITTING\nSPEECH_TEST\nOTHER",
+   "default": "FITTING",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "device_brand",
+   "fieldtype": "Data",
+   "label": "Brand"
+  },
+  {
+   "fieldname": "device_model",
+   "fieldtype": "Data",
+   "label": "Model"
+  },
+  {
+   "fieldname": "device_serial",
+   "fieldtype": "Data",
+   "label": "Serial"
+  },
+  {
+   "fieldname": "audiogram_data",
+   "fieldtype": "JSON",
+   "label": "Audiogram Data"
+  },
+  {
+   "fieldname": "fitting_data",
+   "fieldtype": "JSON",
+   "label": "Fitting Data"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "synced_at",
+   "fieldtype": "Datetime",
+   "label": "Synced At",
+   "read_only": 1
+  }
+ ],
+ "track_changes": 1,
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 0,
+   "cancel": 0,
+   "amend": 0,
+   "report": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "Sales Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 0,
+   "submit": 0,
+   "cancel": 0,
+   "amend": 0,
+   "report": 1,
+   "export": 1,
+   "import": 0,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "Sales User",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "submit": 0,
+   "cancel": 0,
+   "amend": 0,
+   "report": 1,
+   "export": 1,
+   "import": 0,
+   "print": 1,
+   "email": 1
+  }
+ ]
+}
