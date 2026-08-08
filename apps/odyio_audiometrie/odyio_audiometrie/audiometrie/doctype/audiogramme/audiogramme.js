@@ -72,14 +72,16 @@ function render_audiogramme(frm) {
       '<table class="ao-table"><tr>' +
         '<td class="ao-cell">' +
           '<div class="ao-title ao-title-od">\u25B3 OD \u2014 Oreille Droite</div>' +
-          '<canvas id="canvas-od" width="340" height="480"></canvas>' +
+          '<canvas id="canvas-od" width="460" height="640"></canvas>' +
+          '<div class="ao-readout" id="readout-od"></div>' +
           '<div class="ao-leg"><span class="ao-leg-ca"><span class="ao-dot-ca"></span> CA</span>' +
           '<span class="ao-leg-co"><span class="ao-dot-co"></span> CO</span></div>' +
         '</td>' +
         '<td class="ao-gap"></td>' +
         '<td class="ao-cell">' +
           '<div class="ao-title ao-title-og">\u25B3 OG \u2014 Oreille Gauche</div>' +
-          '<canvas id="canvas-og" width="340" height="480"></canvas>' +
+          '<canvas id="canvas-og" width="460" height="640"></canvas>' +
+          '<div class="ao-readout" id="readout-og"></div>' +
           '<div class="ao-leg"><span class="ao-leg-ca"><span class="ao-dot-ca"></span> CA</span>' +
           '<span class="ao-leg-co"><span class="ao-dot-co"></span> CO</span></div>' +
         '</td>' +
@@ -94,6 +96,8 @@ function render_audiogramme(frm) {
     draw("canvas-og", data.left);
     click(frm, "canvas-od", "right", state);
     click(frm, "canvas-og", "left", state);
+    bindHover("canvas-od", "readout-od");
+    bindHover("canvas-og", "readout-og");
     toolbar(frm, state);
     setbtn(state);
   }, 50);
@@ -164,10 +168,7 @@ function draw(id, ear) {
   ctx.setLineDash([]);
 
   function xy(f, db) {
-    var fi = FREQS.indexOf(f);
-    var di = DBS.indexOf(db);
-    if (di < 0) { di = 0; var md = 999; for (var j = 0; j < DBS.length; j++) { var dd = Math.abs(db - DBS[j]); if (dd < md) { md = dd; di = j; } } }
-    return { x: L + (fi / (FREQS.length - 1)) * pW, y: T + (di / (DBS.length - 1)) * pH };
+    return toXY(L, T, pW, pH, f, db);
   }
 
   // CA
@@ -216,27 +217,72 @@ function draw(id, ear) {
   c._L = L; c._T = T; c._pW = pW; c._pH = pH;
 }
 
+function toXY(L, T, pW, pH, f, db) {
+  var frac = Math.log2(f / FREQS[0]) / Math.log2(FREQS[FREQS.length - 1] / FREQS[0]);
+  return { x: L + frac * pW, y: T + (db / DBS[DBS.length - 1]) * pH };
+}
+
+function readFreqDb(L, T, pW, pH, mx, my) {
+  var frac = (mx - L) / pW;
+  var freq = FREQS[0] * Math.pow(2, frac * Math.log2(FREQS[FREQS.length - 1] / FREQS[0]));
+  var db = ((my - T) / pH) * DBS[DBS.length - 1];
+  return { freq: Math.round(freq), db: Math.round(db) };
+}
+
 function click(frm, id, key, st) {
   var c = document.getElementById(id);
   if (!c) return;
   c.onclick = function (e) {
     var r = c.getBoundingClientRect();
-    var sx = c.width / r.width, sy = c.height / r.height;
-    var mx = (e.clientX - r.left) * sx, my = (e.clientY - r.top) * sy;
-    var bf = FREQS[0], bd = DBS[0], md = Infinity;
-    for (var i = 0; i < FREQS.length; i++) {
-      for (var j = 0; j < DBS.length; j++) {
-        var px = c._L + (i / (FREQS.length - 1)) * c._pW;
-        var py = c._T + (j / (DBS.length - 1)) * c._pH;
-        var dd = Math.sqrt((mx - px) * (mx - px) + (my - py) * (my - py));
-        if (dd < md) { md = dd; bf = FREQS[i]; bd = DBS[j]; }
-      }
-    }
-    if (md > 30) return;
+    var mx = (e.clientX - r.left) * (c.width / r.width);
+    var my = (e.clientY - r.top) * (c.height / r.height);
+    var L = c._L, T = c._T, pW = c._pW, pH = c._pH;
+    if (mx < L || mx > L + pW || my < T || my > T + pH) return;
+    var p = readFreqDb(L, T, pW, pH, mx, my);
     st.data[key][st.type] = st.data[key][st.type] || {};
-    st.data[key][st.type][bf] = bd;
+    st.data[key][st.type][p.freq] = p.db;
     draw(id, st.data[key]);
+    drawTooltip(id, p.freq, p.db);
   };
+}
+
+function bindHover(id, rid) {
+  var c = document.getElementById(id);
+  if (!c) return;
+  var rd = document.getElementById(rid);
+  c.onmousemove = function (e) {
+    var r = c.getBoundingClientRect();
+    var mx = (e.clientX - r.left) * (c.width / r.width);
+    var my = (e.clientY - r.top) * (c.height / r.height);
+    var L = c._L, T = c._T, pW = c._pW, pH = c._pH;
+    if (mx < L || mx > L + pW || my < T || my > T + pH) {
+      if (rd) rd.textContent = "";
+      return;
+    }
+    var p = readFreqDb(L, T, pW, pH, mx, my);
+    if (rd) rd.textContent = p.freq + " Hz \u2014 " + p.db + " dB";
+  };
+  c.onmouseleave = function () { if (rd) rd.textContent = ""; };
+}
+
+function drawTooltip(id, f, db) {
+  var c = document.getElementById(id);
+  if (!c) return;
+  var ctx = c.getContext("2d");
+  var p = toXY(c._L, c._T, c._pW, c._pH, f, db);
+  var text = f + " Hz \u2014 " + db + " dB";
+  ctx.font = "bold 12px Arial,sans-serif";
+  ctx.textBaseline = "middle";
+  var tw = ctx.measureText(text).width;
+  var bw = tw + 12, bh = 22;
+  var bx = p.x + 10, by = p.y - bh - 8;
+  if (bx + bw > c.width) bx = p.x - bw - 10;
+  if (by < 2) by = p.y + 10;
+  ctx.fillStyle = "rgba(17,24,39,0.85)";
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.fillStyle = "#fff";
+  ctx.textAlign = "left";
+  ctx.fillText(text, bx + 6, by + bh / 2 + 1);
 }
 
 function toolbar(frm, st) {

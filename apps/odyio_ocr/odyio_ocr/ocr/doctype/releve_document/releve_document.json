@@ -1,0 +1,146 @@
+{
+ "name": "Releve Document",
+ "module": "OCR",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "autoname": "format:SCAN-{####}",
+ "title_field": "document_number",
+ "search_fields": "document_number,supplier_name",
+ "is_submittable": 0,
+ "istable": 0,
+ "is_tree": 0,
+ "allow_rename": 1,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "fields": [
+  {
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Document (image ou PDF)",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "document_type",
+   "fieldtype": "Select",
+   "label": "Type de document",
+   "options": "Bon de Livraison\nFacture",
+   "default": "Bon de Livraison",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "ocr_status",
+   "fieldtype": "Select",
+   "label": "Statut OCR",
+   "options": "Non analyse\nAnalyse en cours\nAnalyse\nErreur",
+   "default": "Non analyse",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Fournisseur",
+   "options": "Supplier",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "label": "Nom du fournisseur",
+   "fetch_from": "supplier.supplier_name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "document_number",
+   "fieldtype": "Data",
+   "label": "Numéro de document",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "date_document",
+   "fieldtype": "Date",
+   "label": "Date du document"
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "label": "Montant total",
+   "options": "company_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "stock_entry",
+   "fieldtype": "Link",
+   "label": "Entrée de stock créée",
+   "options": "Stock Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_items",
+   "fieldtype": "Section Break",
+   "label": "Articles détectés"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Articles",
+   "options": "Releve Document Item"
+  },
+  {
+   "fieldname": "section_ocr",
+   "fieldtype": "Section Break",
+   "label": "Texte OCR brut"
+  },
+  {
+   "fieldname": "ocr_text",
+   "fieldtype": "Code",
+   "label": "Texte extrait",
+   "options": "Text",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error",
+   "fieldtype": "Small Text",
+   "label": "Erreur",
+   "read_only": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 0,
+   "cancel": 0,
+   "amend": 0,
+   "report": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "Stock User",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 0,
+   "submit": 0,
+   "cancel": 0,
+   "amend": 0,
+   "report": 1,
+   "export": 1,
+   "import": 0,
+   "print": 1,
+   "email": 1
+  }
+ ]
+}

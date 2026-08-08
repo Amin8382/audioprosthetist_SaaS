@@ -1,0 +1,6 @@
+app_name = "odyio_ocr"
+app_title = "Odyio OCR"
+app_publisher = "Odyio Technologies"
+app_description = "OCR de bons de livraison et factures vers les entrees de stock"
+app_email = "contact@odyio.fr"
+app_license = "mit"

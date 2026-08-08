@@ -89,8 +89,19 @@
   border: 1px solid #d1d5db;
   border-radius: 2px;
   cursor: crosshair;
+  width: 100%;
   max-width: 100%;
   height: auto;
+}
+
+.ao-readout {
+  margin-top: 6px;
+  min-height: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: Consolas, Menlo, monospace;
+  color: #374151;
+  white-space: nowrap;
 }
 
 .ao-title {
