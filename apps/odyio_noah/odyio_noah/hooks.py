@@ -137,9 +137,9 @@ doctype_js = {"Customer": "public/js/customer_noah.js"}
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+override_doctype_class = {
+	"Customer": "odyio_noah.customer_controller.CustomerController",
+}
 
 # Document Events
 # ---------------
