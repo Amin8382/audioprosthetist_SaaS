@@ -111,6 +111,8 @@ Demande : l'ID patient sur **tous les modules** doit être une combinaison prén
 
 | Hash | Message |
 |------|---------|
+| `ad0777d` | feat: patient ID = name + lastname combination across modules (PG-safe naming + search) (poussé) |
+| `790e71a` | feat: add odyio_noah Noah Mobile REST sync + audiogramme eraser/move/centering (poussé) |
 | `799f3e6` | feat: add odyio_ocr module + audiogramme free placement (poussé) |
 | `2a3f2a6` | refactor: remove entire odyio_cnam module |
 | `4374c94` | chore: ignore Redis dump.rdb |
