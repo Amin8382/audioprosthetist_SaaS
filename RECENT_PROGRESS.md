@@ -57,6 +57,7 @@ Fichiers : `apps/odyio_audiometrie/.../audiogramme.js`, `public/css/audiometrie.
 4. **JSON fields PG** : `audiogram_left` revient en dict → `_to_dict()` partout
 5. **`noah_mobile_url` `reqd`** retiré (fallback `site_config.json` possible sans erreur au save des Settings)
 6. **Bug Frappe v15 + PostgreSQL (2)** : `get_valid_dict` (`frappe/model/base_document.py`) rejette toute valeur **liste** hors champ Table → sur PG, le champ JSON `link_filters` d'un DocType revient en liste et le `save()` d'un DocType standard (requis par le patch `patient_naming`) plantait sur « Value for Link Filters cannot be a list ». Patch Frappe : le contrôle « cannot be a list » ignore le fieldtype JSON, et les valeurs JSON dict **et** list sont sérialisées en `json.dumps` avant écriture (comme les dicts l'étaient déjà).
+7. **Setup ERPNext incomplet à l'install d'origine** : l'install s'était faite pendant que le bug `link_filters` bloquait la création de Custom Fields → les champs install d'ERPNext manquaient (`Address.is_your_company_address`, `tax_category`, `Contact.is_billing_contact`, `Print Settings.compact_item_print`…, `Email Account.company`, `Communication.company`) et **aucun Address Template** n'existait → sauvegarde d'un Customer avec adresse plantait sur « No default Address Template found ». Corrigé via `patches/erpnext_setup_fields.py` (ré-exécute les fonctions idempotentes d'ERPNext + crée un Address Template « Tunisia »).
 
 ### Vérifications serveur
 
@@ -141,6 +142,7 @@ Branche : `master`.
 2. **Permission Customer refusée** → ajouter les rôles ERP (Sales, Accounts, Stock, Purchase).
 3. **`link_filters` PostgreSQL** → patch Frappe requis (voir section 2).
 4. **`get_valid_dict` PostgreSQL (JSON list)** → patch Frappe requis (voir section 2, bug 6).
+5. **Erreur « No default Address Template found » / `is_your_company_address` manquant** → patch `odyio_noah.patches.erpnext_setup_fields` (voir section 2, bug 7).
 
 ---
 

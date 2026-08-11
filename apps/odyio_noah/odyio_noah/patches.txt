@@ -6,3 +6,4 @@
 # Patches added in this section will be executed after doctypes are migrated
 odyio_noah.patches.noah_custom_fields
 odyio_noah.patches.patient_naming
+odyio_noah.patches.erpnext_setup_fields

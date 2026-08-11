@@ -52,6 +52,7 @@ bench build
 - Les champs JSON sont des `json` (PostgreSQL) → dicts en Python, gérés par `_to_dict()`.
 - Patch Frappe requis (v15 + PostgreSQL) : `validate_link_filters` dans `frappe/core/doctype/doctype/doctype.py` doit accepter une liste déjà parsée.
 - Patch Frappe requis (v15 + PostgreSQL) : `get_valid_dict` dans `frappe/model/base_document.py` doit accepter et sérialiser les valeurs **list** des champs JSON (sinon « Value for Link Filters cannot be a list » à la sauvegarde d'un DocType).
+- Patch `erpnext_setup_fields` : ré-exécute les champs personnalisés install d'ERPNext (bloqués à l'install d'origine par le bug `link_filters`) et crée un Address Template « Tunisia » (sinon « No default Address Template found » à la création d'un Customer avec adresse).
 
 ### License
 
