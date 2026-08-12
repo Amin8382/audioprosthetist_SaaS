@@ -5,7 +5,7 @@ import frappe
 
 
 def execute():
-	"""Coherent patient format: identity fields, civility, NSS/NPI, search."""
+	"""Coherent patient format: identity fields, civility, CNAM/NPI, search."""
 	from odyio_noah.install import setup_patient_format
 
 	setup_patient_format()

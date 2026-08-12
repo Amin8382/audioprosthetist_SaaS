@@ -15,7 +15,7 @@ class CustomerController(Customer):
 	- customer_name   : the patient ID, derived as "first_name last_name"
 	  with a " - 2" / " - 3" suffix for homonyms.
 	- mobile_no       : copied into the auto-created primary Contact
-	- nss / npi       : N° de sécurité sociale / N° de pièce d'identité
+	- cnam / npi       : N° CNAM / N° de pièce d'identité
 
 	The full name is derived from prénom + nom at creation. Editing prénom /
 	nom on an existing patient renames the Customer (and every linked

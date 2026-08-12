@@ -14,15 +14,17 @@ Synchronisation bidirectionnelle **Noah Mobile (REST API)** pour cabinet d'audio
 | `install.py` + `patches/noah_custom_fields.py` | Champs personnalisés Customer (idempotents) |
 | `customer_controller.py` | Override contrôleur Customer — ID patient = nom + prénom (PG-safe, suffixe ` - 2`), identité éditable + auto-rename, synchro Contact |
 | `patches/patient_naming.py` | `cust_master_name = "Customer Name"` + `search_fields` Customer (recherche par nom + prénom) |
-| `patches/patient_format.py` | Format patient cohérent : civilité, prénom, nom, mobile, NSS/NPI + seeds idempotents (Salutations, Customer Groups, Territories) |
-| `install.py` | `setup_patient_format()` : champs custom `nss`/`npi`, seeds salutations/groupes/territoires, 10 Property Setters (déverrouillage + labels FR), `search_fields` étendu |
+| `patches/patient_format.py` | Format patient cohérent : civilité, prénom, nom, mobile, CNAM/NPI + seeds idempotents (Salutations, Customer Groups, Territories) |
+| `patches/patient_cnam.py` | Migration `nss` → `cnam` (N° CNAM) + formulaire adresse minimal |
+| `install.py` | `setup_patient_format()` : champs custom `cnam`/`npi`, seeds salutations/groupes/territoires, Property Setters (déverrouillage + labels FR), formulaire adresse minimal, `search_fields` étendu |
 
 ### Format patient (formulaire Customer)
 
 Le formulaire patient (Customer) porte l'identité complète :
 - **Civilité** : Link `Salutation` (Mr / Mme / Mlle / Enf), seeds idempotents (table vide à l'install d'origine)
 - **Prénom / Nom** : champs standard déverrouillés (Property Setters) — ERPNext les fetch depuis le Contact primaire (`fetch_from`), l'override `_validate_links()` neutralise ce fetch sinon les edits sont écrasés avant `validate()`
-- **NSS / NPI** : champs custom `nss` (N° de sécurité sociale) et `npi` (N° de pièce d'identité)
+- **N° CNAM / N° de pièce d'identité** : champs custom `cnam` (N° CNAM) et `npi` (N° de pièce d'identité)
+- **Adresse** : formulaire adresse minimal — seuls **Adresse ligne 1**, **Ville** et **Région/État** restent visibles (champs `country` = Tunisie et `address_type` = Permanent par défaut, titre auto depuis le patient)
 - **Mobile / E-mail** : champs standard déverrouillés, propagés au Contact primaire
 - **Auto-rename** : éditer prénom/nom renomme le Customer via `frappe.rename_doc(force=True, show_alert=False)` — Address, Contact et Noah Session (liens dynamiques) suivent ; save sans changement = aucun rename
 - **Recherche** : `search_fields` = `customer_group, territory, mobile_no, primary_address, customer_name, name, first_name, last_name`
