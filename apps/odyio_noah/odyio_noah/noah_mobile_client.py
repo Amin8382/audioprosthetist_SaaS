@@ -104,29 +104,28 @@ class NoahMobileClient:
 		parts = name.split()
 		return parts[0], " ".join(parts[1:])
 
-	def create_patient(self, customer):
-		"""Create patient in Noah."""
-		first, last = self._split_name(customer.customer_name)
-		payload = {
+	def _patient_payload(self, customer):
+		first = (getattr(customer, "first_name", "") or "").strip()
+		last = (getattr(customer, "last_name", "") or "").strip()
+		if not first and not last:
+			first, last = self._split_name(customer.customer_name)
+		return {
 			"firstName": first,
 			"lastName": last,
 			"dateOfBirth": str(customer.dob) if customer.dob else None,
 			"phone": customer.mobile_no,
 			"email": customer.email_id,
 		}
-		return self._request("POST", "patients", json=payload)
+
+	def create_patient(self, customer):
+		"""Create patient in Noah."""
+		return self._request("POST", "patients", json=self._patient_payload(customer))
 
 	def update_patient(self, noah_patient_id, customer):
 		"""Update patient in Noah."""
-		first, last = self._split_name(customer.customer_name)
-		payload = {
-			"firstName": first,
-			"lastName": last,
-			"dateOfBirth": str(customer.dob) if customer.dob else None,
-			"phone": customer.mobile_no,
-			"email": customer.email_id,
-		}
-		return self._request("PUT", "patients/{}".format(noah_patient_id), json=payload)
+		return self._request(
+			"PUT", "patients/{}".format(noah_patient_id), json=self._patient_payload(customer)
+		)
 
 	def create_audiogram(self, noah_patient_id, audiogram_data):
 		"""Create audiogram in Noah."""

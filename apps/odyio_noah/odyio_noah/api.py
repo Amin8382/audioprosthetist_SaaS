@@ -81,10 +81,10 @@ def sync_from_noah(customer_name):
 	if noah_patient is None:
 		frappe.throw("Impossible de récupérer les données Noah. Vérifiez la connexion.")
 
-	# Update customer basic info
-	customer.customer_name = "{} {}".format(
-		noah_patient.get("firstName", ""), noah_patient.get("lastName", "")
-	).strip()
+	# Update customer basic info (the controller derives customer_name and
+	# renames the patient if prénom/nom changed).
+	customer.first_name = noah_patient.get("firstName") or ""
+	customer.last_name = noah_patient.get("lastName") or ""
 	customer.dob = noah_patient.get("dateOfBirth")
 	phone, email = noah_patient.get("phone"), noah_patient.get("email")
 

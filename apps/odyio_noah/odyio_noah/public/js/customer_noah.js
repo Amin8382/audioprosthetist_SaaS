@@ -64,7 +64,27 @@ frappe.ui.form.on("Customer", {
 			renderAudiogram(frm);
 		}
 	},
+
+	// ─── PATIENT ID = prénom + nom ──────────────────────────
+	first_name: function (frm) {
+		syncPatientName(frm);
+	},
+
+	last_name: function (frm) {
+		syncPatientName(frm);
+	},
 });
+
+// Derive the patient ID (customer_name) from prénom + nom as the operator
+// types, so the required full-name field is already filled before save.
+function syncPatientName(frm) {
+	const parts = [frm.doc.first_name, frm.doc.last_name].filter(function (value) {
+		return value;
+	});
+	if (parts.length) {
+		frm.set_value("customer_name", parts.join(" ").trim());
+	}
+}
 
 function renderAudiogram(frm) {
 	function parseAudiogram(value) {

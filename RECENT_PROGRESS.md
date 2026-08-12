@@ -99,6 +99,35 @@ Demande : l'ID patient sur **tous les modules** doit être une combinaison prén
 
 ---
 
+## 2ter. Module patient au format cohérent (prénom + nom + civilité + NSS/NPI)
+
+Demande : « mettre tout le module patient dans un certain format » — l'ID patient (= prénom + nom) doit être accompagné de la **civilité** (Mr/Mme/Mlle/Enf), du **prénom**, du **nom**, du **mobile**, de l'**adresse** et des **NSS / NPI** (N° de sécurité sociale / N° de pièce d'identité), tous dans le formulaire Customer, avec recherche par n'importe laquelle de ces valeurs.
+
+### Implémentation
+
+1. **Formulaire patient** : le Customer (filtre `Customer` = liste des patients partout) expose `salutation` (« Civilité »), `first_name` (« Prénom »), `last_name` (« Nom »), `mobile_no` (« Mobile »), `email_id` (« E-mail »), `customer_name` (« Nom complet (ID patient) »), + les nouveaux champs `nss` / `npi` après le nom. `nss`/`npi` sont créés par `setup_patient_format()` (`install.py`), patch `odyio_noah.patches.patient_format` (4e entrée `patches.txt`).
+2. **Déverrouillage des champs standard** : `first_name`/`last_name`/`mobile_no`/`email_id` sont `read_only` côté ERPNext → 10 Property Setters passent leur fieldtype en `Data` + relabel FR. ⚠️ Le fieldtype seul ne suffit pas : le métadata DocType porte `fetch_from = customer_primary_contact.<field>` et `_validate_links()` (Frappe) re-écrase les valeurs depuis le Contact primaire **avant** `validate()` → l'override `CustomerController._validate_links()` neutralise le `fetch_from` des 4 champs pendant la validation des liens (méta partagée = `cached_property`/`frappe.get_meta`, restauré ensuite).
+3. **Auto-rename à l'édition** : éditer prénom/nom d'un patient existant → `validate()` recalcule `customer_name` unique (suffixe ` - 2`…) + `_odyio_rename_to` → `on_update()` appelle `frappe.rename_doc("Customer", old, new, force=True, show_alert=False)` (pas de kwarg `ignore_permissions` dans cette version Frappe) → les liens dynamiques (Address, Contact, Noah Session) suivent. Garde `odyio_renaming` anti-récursion ; un save sans changement ne renomme pas.
+4. **Synchro Contact** : les modifications d'identité (prénom/nom/mobile/e-mail) sont propagées au Contact primaire auto-créé (`_sync_primary_contact()`), qui reste cohérent après renommage.
+5. **Civilité** : Link standard `Salutation`, seeds idempotents `Mr`/`Mme`/`Mlle`/`Enf` (table vide à l'install d'origine).
+6. **Recherche** : `search_fields` Customer étendu → `customer_group, territory, mobile_no, primary_address, customer_name, name, first_name, last_name` ; la recherche Link/globale matche prénom seul, nom seul ou combinaison.
+7. **`_seed_patient_defaults()`** : l'install d'origine n'ayant jamais fait le setup wizard, les Customer Groups (`Individual`/`Commercial`/`Government` + `All Customer Groups`) et Territories (`Tunisia`/`Rest Of The World` + `All Territories`) manquaient → recréation idempotente + Selling Settings (customer_group = Individual, territoire = All Territories). Sans ça : `LinkValidationError: Could not find Customer Group: Individual, Territory: All Territories` à la création de tout patient.
+8. **Noah** : `api.py sync_from_noah` renseigne `first_name`/`last_name` (plus `customer_name` en bloc) ; `noah_mobile_client._patient_payload` utilise prénom/nom s'ils existent, sinon `_split_name(customer_name)` ; `customer_noah.js` recopie prénom + nom → `customer_name` à la saisie.
+
+### Bugs Frappe rencontrés (cette version)
+
+- `frappe.make_property_setter` attend un **dict d'args** (`TypeError ... unexpected keyword argument 'for_doctype'`) → `frappe.make_property_setter({...}, validate_fields_for_doctype=False)`.
+- `frappe.rename_doc` n'accepte **pas** `ignore_permissions` ici : signature `rename_doc(doctype, old, new, force=False, merge=False, *, ignore_if_exists=False, show_alert=True, rebuild_search=True)`.
+- `frappe.search_link` n'existe pas → `from frappe.desk.search import search_link`.
+
+### Vérifié (console Frappe, données nettoyées ensuite)
+
+- Création complète : `Amina Ben Salah` (Mme, mobile, nss, npi) + Contact primaire auto-créé (prénom/nom/mobile recopiés).
+- Homonymes : `Amina Ben Salah - 2`. Recherche : `search_link("Customer","amina ben")` et `"amin"` → les 2.
+- **Édition + rename** : `Ben Salah` → `Trabelsi` renomme le Customer, l'Address (lien dynamique), le Contact primaire et le Noah Session pointant dessus ; save sans changement = pas de rename ; collision gérée (`Amina Trabelsi` déjà pris → rename sans collision).
+
+---
+
 ## 3. Prochaines étapes
 
 1. **Test réel Noah 4.9.1+** — pointer `noah_mobile_url` vers la machine Noah (port 8843, réseau local) et valider les payloads réels (format exact des endpoints Noah Mobile à confirmer)
@@ -112,6 +141,7 @@ Demande : l'ID patient sur **tous les modules** doit être une combinaison prén
 
 | Hash | Message |
 |------|---------|
+| *(en cours)* | feat: coherent patient format (civility, first/last name, NSS/NPI, editable identity + auto-rename) |
 | `ad0777d` | feat: patient ID = name + lastname combination across modules (PG-safe naming + search) (poussé) |
 | `790e71a` | feat: add odyio_noah Noah Mobile REST sync + audiogramme eraser/move/centering (poussé) |
 | `799f3e6` | feat: add odyio_ocr module + audiogramme free placement (poussé) |
@@ -119,7 +149,7 @@ Demande : l'ID patient sur **tous les modules** doit être une combinaison prén
 | `4374c94` | chore: ignore Redis dump.rdb |
 | `8a9096f` | refactor: rewrite audiogramme with clinical dual-ear format |
 
-Branche : `master`.
+Branche : `master`. Le travail « format patient » (section 2ter) est **non commité** à ce jour.
 
 ---
 
