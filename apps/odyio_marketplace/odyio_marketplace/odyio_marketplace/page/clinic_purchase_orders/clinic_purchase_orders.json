@@ -1,0 +1,24 @@
+{
+ "content": null,
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified_by": "Administrator",
+ "module": "Odyio Marketplace",
+ "name": "clinic-purchase-orders",
+ "owner": "Administrator",
+ "page_name": "clinic-purchase-orders",
+ "roles": [
+  {
+   "role": "Clinic User"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Purchase Orders"
+}

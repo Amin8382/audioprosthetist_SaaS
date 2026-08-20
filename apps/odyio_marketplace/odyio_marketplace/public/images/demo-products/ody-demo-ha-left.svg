@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-labelledby="title desc">
+  <title id="title">Left hearing aid demo product illustration</title>
+  <desc id="desc">Professional illustration of a left-ear behind-the-ear hearing aid.</desc>
+  <rect width="640" height="480" rx="32" fill="#f6f8fb"/>
+  <circle cx="190" cy="250" r="118" fill="#eef2f7"/>
+  <circle cx="190" cy="250" r="76" fill="#f6f8fb"/>
+  <path d="M222 121c90 0 158 67 158 154 0 92-71 166-159 166-61 0-105-36-105-88 0-37 25-68 62-78l40-11c34-9 57-39 57-74 0-39-26-69-65-69h12z" fill="#d7b99b"/>
+  <path d="M220 151c50 0 84 36 84 86 0 43-29 80-71 91l-40 11c-15 4-25 16-25 31 0 23 21 39 51 39 69 0 125-59 125-132 0-72-53-126-124-126z" fill="#f0d8c6"/>
+  <path d="M354 85c73 0 132 57 132 128 0 67-51 121-117 126l-29 2c-13 1-25-9-26-23l-9-132c-4-56 20-101 49-101z" fill="#1f7a8c"/>
+  <path d="M365 113c52 0 94 41 94 92 0 48-37 88-84 92l-34 2-8-115c-3-42 14-71 32-71z" fill="#43a6b8"/>
+  <path d="M332 309c22 39 16 82-15 113" fill="none" stroke="#1f2937" stroke-width="16" stroke-linecap="round"/>
+  <path d="M388 137h38M397 174h50M399 211h47" stroke="#d9fbff" stroke-width="12" stroke-linecap="round"/>
+  <rect x="416" y="286" width="72" height="38" rx="19" fill="#172554"/>
+  <circle cx="454" cy="305" r="9" fill="#eff6ff"/>
+  <text x="38" y="58" fill="#475569" font-family="Arial, sans-serif" font-size="22" font-weight="700">LEFT</text>
+</svg>

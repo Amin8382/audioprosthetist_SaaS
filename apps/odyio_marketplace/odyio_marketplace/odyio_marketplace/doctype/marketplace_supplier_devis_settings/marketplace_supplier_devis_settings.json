@@ -1,0 +1,38 @@
+{
+ "actions": [],
+ "allow_import": 0,
+ "allow_rename": 0,
+ "autoname": "field:supplier",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "fields": [
+  {"fieldname": "supplier", "fieldtype": "Link", "label": "Supplier", "options": "Supplier", "reqd": 1, "unique": 1, "in_list_view": 1},
+  {"fieldname": "default_template", "fieldtype": "Select", "label": "Default Template", "options": "classic\nmodern\ncompact", "default": "classic", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "branding_section", "fieldtype": "Section Break", "label": "Branding"},
+  {"fieldname": "default_display_name", "fieldtype": "Data", "label": "Default Display Name"},
+  {"fieldname": "default_logo", "fieldtype": "Attach Image", "label": "Default Logo"},
+  {"fieldname": "contact_section", "fieldtype": "Section Break", "label": "Contact / Presentation"},
+  {"fieldname": "default_address", "fieldtype": "Small Text", "label": "Default Address"},
+  {"fieldname": "default_city", "fieldtype": "Data", "label": "Default City"},
+  {"fieldname": "default_country", "fieldtype": "Data", "label": "Default Country"},
+  {"fieldname": "default_phone", "fieldtype": "Data", "label": "Default Phone"},
+  {"fieldname": "default_email", "fieldtype": "Data", "label": "Default Email"},
+  {"fieldname": "default_identifiers", "fieldtype": "Small Text", "label": "Default Identifiers"},
+  {"fieldname": "document_defaults_section", "fieldtype": "Section Break", "label": "Document Defaults"},
+  {"fieldname": "default_footer_terms", "fieldtype": "Small Text", "label": "Default Footer / Terms"}
+ ],
+ "is_submittable": 0,
+ "istable": 0,
+ "links": [],
+ "module": "Odyio Marketplace",
+ "name": "Marketplace Supplier Devis Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {"role": "System Manager", "read": 1, "write": 1, "create": 1, "delete": 1, "report": 1, "export": 1, "print": 1, "email": 1},
+  {"role": "Fournisseur", "read": 1, "write": 1, "create": 1, "delete": 0, "report": 1, "export": 0, "print": 0, "email": 0}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "supplier"
+}

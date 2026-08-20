@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-label="Charging station demo illustration">
+  <rect width="640" height="480" fill="#f8fafc"/>
+  <rect x="72" y="64" width="496" height="352" rx="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="4"/>
+  <rect x="174" y="188" width="292" height="138" rx="28" fill="#e0f2fe" stroke="#0284c7" stroke-width="12"/>
+  <ellipse cx="256" cy="257" rx="40" ry="54" fill="#ffffff" stroke="#0284c7" stroke-width="8"/>
+  <ellipse cx="384" cy="257" rx="40" ry="54" fill="#ffffff" stroke="#0284c7" stroke-width="8"/>
+  <path d="M291 346h58" stroke="#0284c7" stroke-width="14" stroke-linecap="round"/>
+  <text x="320" y="442" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" fill="#334155">Charging Station</text>
+</svg>

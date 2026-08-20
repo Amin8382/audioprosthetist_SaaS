@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-label="Receiver in canal hearing aid demo illustration">
+  <rect width="640" height="480" fill="#f8fafc"/>
+  <rect x="74" y="64" width="492" height="352" rx="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="4"/>
+  <path d="M384 120c56 22 83 77 62 129-16 42-52 60-91 77" fill="none" stroke="#7c3aed" stroke-width="28" stroke-linecap="round"/>
+  <path d="M348 323c-26 18-50 42-51 74" fill="none" stroke="#7c3aed" stroke-width="14" stroke-linecap="round"/>
+  <ellipse cx="279" cy="398" rx="38" ry="24" fill="#ddd6fe" stroke="#7c3aed" stroke-width="8"/>
+  <rect x="157" y="151" width="94" height="150" rx="42" fill="#a78bfa"/>
+  <circle cx="204" cy="207" r="15" fill="#ffffff"/>
+  <text x="320" y="442" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" fill="#334155">RIC Left</text>
+</svg>

@@ -1,0 +1,24 @@
+{
+ "content": null,
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified_by": "Administrator",
+ "module": "Odyio Marketplace",
+ "name": "supplier-my-offers",
+ "owner": "Administrator",
+ "page_name": "supplier-my-offers",
+ "roles": [
+  {
+   "role": "Fournisseur"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "My Offers"
+}
