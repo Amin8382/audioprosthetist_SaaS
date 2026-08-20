@@ -7,6 +7,7 @@ from odyio_marketplace.permissions import _allowed_values
 
 
 REQUEST_STATUSES = {"Draft", "Sent", "Cancelled", "Expired"}
+FULFILLMENT_METHODS = {"DELIVERY", "PICKUP"}
 ITEM_MARKETPLACE_FIELDS = (
 	"marketplace_enabled",
 	"marketplace_available",
@@ -20,6 +21,7 @@ class MarketplaceQuotationRequest(Document):
 		self.set_default_status()
 		self.validate_clinic_actor_permission()
 		self.validate_status_state()
+		self.validate_fulfillment()
 		self.validate_items()
 		self.set_summary_fields()
 
@@ -96,6 +98,26 @@ class MarketplaceQuotationRequest(Document):
 
 		if self.docstatus == 1 and self.status != "Sent" and not (is_submit_action and self.status == "Draft"):
 			frappe.throw(_("Submitted quotation requests must remain Sent in this sprint."))
+
+	def validate_fulfillment(self):
+		if self.fulfillment_method not in FULFILLMENT_METHODS:
+			frappe.throw(_("Choose Delivery or Pickup before sending the quotation request."))
+
+		if self.fulfillment_method == "DELIVERY":
+			if not (self.delivery_address_line1 and self.delivery_city and self.delivery_country):
+				frappe.throw(_("Delivery requests require address line 1, city, and country."))
+			return
+
+		for fieldname in (
+			"delivery_address_line1",
+			"delivery_address_line2",
+			"delivery_city",
+			"delivery_postal_code",
+			"delivery_country",
+			"delivery_contact_name",
+			"delivery_contact_phone",
+		):
+			self.set(fieldname, "")
 
 	def validate_items(self):
 		if not self.items:

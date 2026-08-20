@@ -12,7 +12,9 @@ def marketplace_quotation_request_query_conditions(user=None):
 
 	conditions = []
 	if _has_role(user, "Clinic User"):
-		conditions.append(f"{_column('Marketplace Quotation Request', 'owner')} = {frappe.db.escape(user)}")
+		allowed_companies = _allowed_values(user, "Company", "Marketplace Quotation Request") or _allowed_values(user, "Company")
+		if allowed_companies:
+			conditions.append(f"{_column('Marketplace Quotation Request', 'clinic')} in ({_sql_list(allowed_companies)})")
 
 	if _has_role(user, "Fournisseur"):
 		allowed_suppliers = _allowed_values(user, "Supplier", "Marketplace Quotation Request")
@@ -43,6 +45,119 @@ def has_marketplace_quotation_request_permission(doc, user=None, permission_type
 	)
 
 
+def marketplace_supplier_offer_query_conditions(user=None):
+	user = user or frappe.session.user
+	if _is_unrestricted(user):
+		return ""
+
+	conditions = []
+	if _has_role(user, "Fournisseur"):
+		allowed_suppliers = _allowed_values(user, "Supplier", "Marketplace Supplier Offer")
+		if allowed_suppliers:
+			conditions.append(f"{_column('Marketplace Supplier Offer', 'supplier')} in ({_sql_list(allowed_suppliers)})")
+
+	if _has_role(user, "Clinic User"):
+		allowed_companies = _allowed_values(user, "Company", "Marketplace Supplier Offer") or _allowed_values(user, "Company")
+		if not allowed_companies:
+			return "1 = 0"
+		conditions.append(
+			f"{_column('Marketplace Supplier Offer', 'status')} in ({_sql_list({'Sent', 'Accepted', 'Rejected'})}) "
+			f"and {_column('Marketplace Supplier Offer', 'clinic')} in ({_sql_list(allowed_companies)})"
+		)
+
+	return f"({' or '.join(f'({condition})' for condition in conditions)})" if conditions else "1 = 0"
+
+
+def has_marketplace_supplier_offer_permission(doc, user=None, permission_type=None):
+	user = user or frappe.session.user
+	permission_type = permission_type or "read"
+
+	if _is_unrestricted(user):
+		return True
+
+	if permission_type == "create":
+		return _has_role(user, "Fournisseur")
+
+	if not doc:
+		return False
+
+	return _supplier_offer_permission(doc, user, permission_type) or _clinic_offer_permission(
+		doc, user, permission_type
+	)
+
+
+def marketplace_devis_snapshot_query_conditions(user=None):
+	user = user or frappe.session.user
+	if _is_unrestricted(user):
+		return ""
+
+	conditions = []
+	if _has_role(user, "Fournisseur"):
+		allowed_suppliers = _allowed_values(user, "Supplier", "Marketplace Devis Snapshot") or _allowed_values(user, "Supplier")
+		if allowed_suppliers:
+			conditions.append(f"{_column('Marketplace Devis Snapshot', 'supplier')} in ({_sql_list(allowed_suppliers)})")
+
+	if _has_role(user, "Clinic User"):
+		allowed_companies = _allowed_values(user, "Company", "Marketplace Devis Snapshot") or _allowed_values(user, "Company")
+		if allowed_companies:
+			conditions.append(f"{_column('Marketplace Devis Snapshot', 'clinic')} in ({_sql_list(allowed_companies)})")
+
+	return f"({' or '.join(f'({condition})' for condition in conditions)})" if conditions else "1 = 0"
+
+
+def has_marketplace_devis_snapshot_permission(doc, user=None, permission_type=None):
+	user = user or frappe.session.user
+	permission_type = permission_type or "read"
+
+	if _is_unrestricted(user):
+		return True
+
+	if not doc:
+		return False
+
+	if _has_role(user, "Fournisseur"):
+		allowed_suppliers = _allowed_values(user, "Supplier", "Marketplace Devis Snapshot") or _allowed_values(user, "Supplier")
+		if doc.supplier in allowed_suppliers:
+			return permission_type in READ_PERMISSIONS or permission_type in {"create", "write"}
+
+	if _has_role(user, "Clinic User"):
+		allowed_companies = _allowed_values(user, "Company", "Marketplace Devis Snapshot") or _allowed_values(user, "Company")
+		if doc.clinic in allowed_companies:
+			return permission_type in READ_PERMISSIONS
+
+	return False
+
+
+def marketplace_supplier_devis_settings_query_conditions(user=None):
+	user = user or frappe.session.user
+	if _is_unrestricted(user):
+		return ""
+
+	if not _has_role(user, "Fournisseur"):
+		return "1 = 0"
+
+	allowed_suppliers = _allowed_values(user, "Supplier", "Marketplace Supplier Devis Settings") or _allowed_values(user, "Supplier")
+	if not allowed_suppliers:
+		return "1 = 0"
+	return f"{_column('Marketplace Supplier Devis Settings', 'supplier')} in ({_sql_list(allowed_suppliers)})"
+
+
+def has_marketplace_supplier_devis_settings_permission(doc, user=None, permission_type=None):
+	user = user or frappe.session.user
+	permission_type = permission_type or "read"
+
+	if _is_unrestricted(user):
+		return True
+	if not _has_role(user, "Fournisseur"):
+		return False
+	if permission_type not in READ_PERMISSIONS and permission_type not in {"create", "write"}:
+		return False
+	if not doc:
+		return True
+	allowed_suppliers = _allowed_values(user, "Supplier", "Marketplace Supplier Devis Settings") or _allowed_values(user, "Supplier")
+	return doc.supplier in allowed_suppliers
+
+
 def marketplace_item_query_conditions(user=None):
 	user = user or frappe.session.user
 	if _is_unrestricted(user):
@@ -69,6 +184,29 @@ def marketplace_item_query_conditions(user=None):
 	return "1 = 0" if has_marketplace_role else None
 
 
+def marketplace_purchase_order_query_conditions(user=None):
+	user = user or frappe.session.user
+	if _is_unrestricted(user):
+		return ""
+
+	if not _has_role(user, "Clinic User"):
+		return None
+
+	allowed_companies = _allowed_values(user, "Company", "Purchase Order") or _allowed_values(user, "Company")
+	if not allowed_companies:
+		return "1 = 0"
+
+	return (
+		f"{_column('Purchase Order', 'name')} in ("
+		f"select {_column('Marketplace Quotation Request', 'linked_purchase_order')} "
+		f"from {_table('Marketplace Quotation Request')} "
+		f"where {_column('Marketplace Quotation Request', 'clinic')} in ({_sql_list(allowed_companies)}) "
+		f"and {_column('Marketplace Quotation Request', 'linked_purchase_order')} is not null "
+		f"and {_column('Marketplace Quotation Request', 'linked_purchase_order')} != ''"
+		f")"
+	)
+
+
 def has_marketplace_item_permission(doc, user=None, permission_type=None):
 	user = user or frappe.session.user
 	permission_type = permission_type or "read"
@@ -82,17 +220,47 @@ def has_marketplace_item_permission(doc, user=None, permission_type=None):
 		return False
 
 	if _has_role(user, "Fournisseur"):
-		if permission_type == "create":
-			return True
-		if permission_type in {"read", "write", "select", "print", "report"}:
+		if permission_type in {"read", "select", "report"}:
 			return doc.get("marketplace_supplier") in _allowed_values(user, "Supplier", "Item")
 		return False
 
 	return None
 
 
+def has_marketplace_purchase_order_permission(doc, user=None, permission_type=None):
+	user = user or frappe.session.user
+	permission_type = permission_type or "read"
+
+	if _is_unrestricted(user):
+		return None
+
+	if not _has_role(user, "Clinic User"):
+		return None
+
+	if permission_type not in READ_PERMISSIONS:
+		return False
+
+	if not doc:
+		return False
+
+	allowed_companies = _allowed_values(user, "Company", "Purchase Order") or _allowed_values(user, "Company")
+	if doc.company not in allowed_companies:
+		return False
+
+	return bool(
+		frappe.db.exists(
+			"Marketplace Quotation Request",
+			{"clinic": ["in", allowed_companies], "linked_purchase_order": doc.name},
+		)
+	)
+
+
 def _clinic_request_permission(doc, user, permission_type):
-	if not _has_role(user, "Clinic User") or doc.owner != user:
+	if not _has_role(user, "Clinic User"):
+		return False
+
+	allowed_companies = _allowed_values(user, "Company", "Marketplace Quotation Request") or _allowed_values(user, "Company")
+	if doc.clinic not in allowed_companies:
 		return False
 
 	if permission_type in READ_PERMISSIONS:
@@ -120,6 +288,39 @@ def _supplier_request_permission(doc, user, permission_type):
 	return doc.status == "Sent" and doc.supplier in _allowed_values(user, "Supplier", "Marketplace Quotation Request")
 
 
+def _supplier_offer_permission(doc, user, permission_type):
+	if not _has_role(user, "Fournisseur"):
+		return False
+
+	if doc.supplier not in _allowed_values(user, "Supplier", "Marketplace Supplier Offer"):
+		return False
+
+	if permission_type in READ_PERMISSIONS:
+		return True
+
+	if permission_type in {"write", "submit", "delete"}:
+		return doc.docstatus == 0 and doc.status == "Draft"
+
+	return False
+
+
+def _clinic_offer_permission(doc, user, permission_type):
+	if not _has_role(user, "Clinic User"):
+		return False
+
+	allowed_companies = _allowed_values(user, "Company", "Marketplace Supplier Offer") or _allowed_values(user, "Company")
+	if doc.clinic not in allowed_companies:
+		return False
+
+	if permission_type in READ_PERMISSIONS:
+		return doc.status in {"Sent", "Accepted", "Rejected"}
+
+	if permission_type == "write":
+		return doc.docstatus == 1 and doc.status == "Sent"
+
+	return False
+
+
 def _allowed_values(user, allow, applicable_for=None):
 	records = frappe.get_all(
 		"User Permission",
@@ -142,10 +343,16 @@ def _is_unrestricted(user):
 
 
 def _column(doctype, fieldname):
+	if frappe.db.db_type == "postgres":
+		return f'{_table(doctype)}."{fieldname}"'
+	return f"{_table(doctype)}.`{fieldname}`"
+
+
+def _table(doctype):
 	table = f"tab{doctype}"
 	if frappe.db.db_type == "postgres":
-		return f'"{table}"."{fieldname}"'
-	return f"`{table}`.`{fieldname}`"
+		return f'"{table}"'
+	return f"`{table}`"
 
 
 def _sql_list(values):

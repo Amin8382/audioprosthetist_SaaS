@@ -4,6 +4,9 @@ from frappe.tests.utils import FrappeTestCase
 from odyio_marketplace.setup.install import install_marketplace_foundation
 
 
+test_ignore = ["Company", "Item", "Purchase Order", "Supplier"]
+
+
 class TestMarketplaceQuotationRequest(FrappeTestCase):
 	@classmethod
 	def setUpClass(cls):
@@ -159,6 +162,7 @@ class TestMarketplaceQuotationRequest(FrappeTestCase):
 				"doctype": "Marketplace Quotation Request",
 				"clinic": self.company_a,
 				"supplier": supplier or self.supplier_a,
+				"fulfillment_method": "PICKUP",
 				"items": [{"item": item or self.item_a, "quantity": 2}],
 			}
 		)
@@ -186,6 +190,7 @@ class TestMarketplaceQuotationRequest(FrappeTestCase):
 				"doctype": "Marketplace Quotation Request",
 				"clinic": self.company_a,
 				"supplier": self.supplier_a,
+				"fulfillment_method": "PICKUP",
 			}
 		)
 
@@ -198,6 +203,7 @@ class TestMarketplaceQuotationRequest(FrappeTestCase):
 				"doctype": "Marketplace Quotation Request",
 				"clinic": self.company_a,
 				"supplier": self.supplier_a,
+				"fulfillment_method": "PICKUP",
 				"items": [
 					{"item": self.item_a, "quantity": 1},
 					{"item": self.item_b, "quantity": 1},
@@ -214,6 +220,7 @@ class TestMarketplaceQuotationRequest(FrappeTestCase):
 				"doctype": "Marketplace Quotation Request",
 				"clinic": self.company_a,
 				"supplier": self.supplier_a,
+				"fulfillment_method": "PICKUP",
 				"items": [{"item": self.unavailable_item, "quantity": 1}],
 			}
 		)
@@ -269,4 +276,3 @@ class TestMarketplaceQuotationRequest(FrappeTestCase):
 		self.assertEqual(sent.status, "Cancelled")
 		self.assertEqual(sent.docstatus, 2)
 		self.assertRaises(frappe.ValidationError, sent.cancel_request)
-

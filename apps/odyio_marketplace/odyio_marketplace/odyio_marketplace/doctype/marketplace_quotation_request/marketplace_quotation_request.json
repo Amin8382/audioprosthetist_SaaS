@@ -53,6 +53,15 @@
    "in_standard_filter": 1
   },
   {
+   "fieldname": "fulfillment_method",
+   "fieldtype": "Select",
+   "label": "Fulfillment Method",
+   "options": "\nDELIVERY\nPICKUP",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
    "fieldname": "sent_at",
    "fieldtype": "Datetime",
    "label": "Sent At",
@@ -67,17 +76,66 @@
    "in_standard_filter": 1
   },
   {
+   "fieldname": "delivery_address_section",
+   "fieldtype": "Section Break",
+   "label": "Delivery Address Snapshot",
+   "depends_on": "eval:doc.fulfillment_method=='DELIVERY'"
+  },
+  {
+   "fieldname": "delivery_address_line1",
+   "fieldtype": "Data",
+   "label": "Address Line 1",
+   "depends_on": "eval:doc.fulfillment_method=='DELIVERY'"
+  },
+  {
+   "fieldname": "delivery_address_line2",
+   "fieldtype": "Data",
+   "label": "Address Line 2",
+   "depends_on": "eval:doc.fulfillment_method=='DELIVERY'"
+  },
+  {
+   "fieldname": "delivery_city",
+   "fieldtype": "Data",
+   "label": "City",
+   "depends_on": "eval:doc.fulfillment_method=='DELIVERY'"
+  },
+  {
+   "fieldname": "delivery_postal_code",
+   "fieldtype": "Data",
+   "label": "Postal Code",
+   "depends_on": "eval:doc.fulfillment_method=='DELIVERY'"
+  },
+  {
+   "fieldname": "delivery_country",
+   "fieldtype": "Data",
+   "label": "Country",
+   "depends_on": "eval:doc.fulfillment_method=='DELIVERY'"
+  },
+  {
+   "fieldname": "delivery_contact_name",
+   "fieldtype": "Data",
+   "label": "Contact Name",
+   "depends_on": "eval:doc.fulfillment_method=='DELIVERY'"
+  },
+  {
+   "fieldname": "delivery_contact_phone",
+   "fieldtype": "Data",
+   "label": "Contact Phone",
+   "depends_on": "eval:doc.fulfillment_method=='DELIVERY'"
+  },
+  {
    "fieldname": "references_section",
    "fieldtype": "Section Break",
    "label": "References"
   },
   {
    "fieldname": "linked_supplier_offer",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Linked Supplier Offer",
+   "options": "Marketplace Supplier Offer",
    "read_only": 1,
    "no_copy": 1,
-   "description": "Reserved for the supplier offer DocType in a later sprint."
+   "description": "The supplier-priced offer linked to this request."
   },
   {
    "fieldname": "linked_purchase_order",
@@ -189,4 +247,3 @@
  "states": [],
  "title_field": "name"
 }
-

@@ -88,6 +88,19 @@ function add_lifecycle_actions(frm) {
 			});
 		});
 	}
+
+	if (
+		frm.doc.status === "Sent" &&
+		frm.doc.docstatus === 1 &&
+		!frm.doc.linked_supplier_offer &&
+		frappe.user.has_role("Fournisseur")
+	) {
+		frm.add_custom_button(__("Create Offer"), () => {
+			frappe.new_doc("Marketplace Supplier Offer", {
+				quotation_request: frm.doc.name,
+			});
+		});
+	}
 }
 
 function validate_items_supplier(frm) {
@@ -103,4 +116,3 @@ function validate_items_supplier(frm) {
 		frappe.msgprint(__("All request items must belong to the selected supplier."));
 	}
 }
-

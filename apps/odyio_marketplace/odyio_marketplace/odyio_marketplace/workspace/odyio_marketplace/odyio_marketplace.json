@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"marketplace-header\",\"type\":\"header\",\"data\":{\"text\":\"Odyio Marketplace\",\"col\":12}},{\"id\":\"marketplace-catalogue\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Marketplace Catalogue\",\"col\":3}},{\"id\":\"my-quotation-requests\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"My Quotation Requests\",\"col\":3}},{\"id\":\"my-products\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"My Products\",\"col\":3}},{\"id\":\"incoming-quotation-requests\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Incoming Quotation Requests\",\"col\":3}}]",
+ "content": "[{\"id\":\"marketplace-header\",\"type\":\"header\",\"data\":{\"text\":\"Marketplace\",\"col\":12}},{\"id\":\"marketplace-home\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Home\",\"col\":3}},{\"id\":\"marketplace-catalogue\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Catalogue\",\"col\":3}},{\"id\":\"clinic-my-requests\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"My Requests\",\"col\":3}},{\"id\":\"clinic-purchase-orders\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Purchase Orders\",\"col\":3}},{\"id\":\"supplier-my-products\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"My Products\",\"col\":3}},{\"id\":\"supplier-incoming-requests\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Incoming Requests\",\"col\":3}},{\"id\":\"supplier-my-offers\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"My Offers\",\"col\":3}},{\"id\":\"odyio-erp-header\",\"type\":\"header\",\"data\":{\"text\":\"ERP / Operations\",\"col\":12}},{\"id\":\"odyio-items\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Items\",\"col\":3}},{\"id\":\"odyio-item-groups\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Item Groups\",\"col\":3}},{\"id\":\"odyio-suppliers\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Suppliers\",\"col\":3}},{\"id\":\"odyio-erp-purchase-orders\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"ERP Purchase Orders\",\"col\":3}},{\"id\":\"odyio-warehouses\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Warehouses\",\"col\":3}},{\"id\":\"odyio-companies\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Companies\",\"col\":3}},{\"id\":\"odyio-audiology-header\",\"type\":\"header\",\"data\":{\"text\":\"Audiology / Clinical\",\"col\":12}},{\"id\":\"odyio-audiograms\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Audiograms\",\"col\":3}},{\"id\":\"odyio-patients\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patients\",\"col\":3}},{\"id\":\"odyio-admin-header\",\"type\":\"header\",\"data\":{\"text\":\"Administration\",\"col\":12}},{\"id\":\"odyio-users\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Users\",\"col\":3}},{\"id\":\"odyio-roles\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Roles\",\"col\":3}}]",
  "custom_blocks": [],
  "doctype": "Workspace",
  "for_user": "",
@@ -25,39 +25,156 @@
    "role": "Fournisseur"
   },
   {
+   "role": "Audiometriste"
+  },
+  {
+   "role": "Purchase User"
+  },
+  {
+   "role": "Purchase Manager"
+  },
+  {
+   "role": "Stock User"
+  },
+  {
+   "role": "Stock Manager"
+  },
+  {
+   "role": "Accounts User"
+  },
+  {
+   "role": "Accounts Manager"
+  },
+  {
+   "role": "Item Manager"
+  },
+  {
+   "role": "Purchase Master Manager"
+  },
+  {
    "role": "System Manager"
   }
  ],
  "shortcuts": [
   {
    "color": "Green",
-   "doc_view": "List",
-   "label": "Marketplace Catalogue",
-   "link_to": "Item",
-   "type": "DocType"
+   "doc_view": "",
+   "label": "Home",
+   "link_to": "marketplace-home",
+   "type": "Page"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Catalogue",
+   "link_to": "marketplace-catalogue",
+   "type": "Page"
   },
   {
    "color": "Blue",
-   "doc_view": "List",
-   "label": "My Quotation Requests",
-   "link_to": "Marketplace Quotation Request",
-   "type": "DocType"
+   "doc_view": "",
+   "label": "My Requests",
+   "link_to": "clinic-my-requests",
+   "type": "Page"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Purchase Orders",
+   "link_to": "clinic-purchase-orders",
+   "type": "Page"
+  },
+  {
+   "color": "Yellow",
+   "doc_view": "",
+   "label": "Incoming Requests",
+   "link_to": "supplier-incoming-requests",
+   "type": "Page"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "",
+   "label": "My Offers",
+   "link_to": "supplier-my-offers",
+   "type": "Page"
   },
   {
    "color": "Orange",
-   "doc_view": "List",
+   "doc_view": "",
    "label": "My Products",
+   "link_to": "supplier-my-products",
+   "type": "Page"
+  },
+  {
+   "color": "Gray",
+   "doc_view": "List",
+   "label": "Items",
    "link_to": "Item",
    "type": "DocType"
   },
   {
-   "color": "Purple",
+   "color": "Gray",
    "doc_view": "List",
-   "label": "Incoming Quotation Requests",
-   "link_to": "Marketplace Quotation Request",
+   "label": "Item Groups",
+   "link_to": "Item Group",
+   "type": "DocType"
+  },
+  {
+   "color": "Gray",
+   "doc_view": "List",
+   "label": "Suppliers",
+   "link_to": "Supplier",
+   "type": "DocType"
+  },
+  {
+   "color": "Gray",
+   "doc_view": "List",
+   "label": "ERP Purchase Orders",
+   "link_to": "Purchase Order",
+   "type": "DocType"
+  },
+  {
+   "color": "Gray",
+   "doc_view": "List",
+   "label": "Warehouses",
+   "link_to": "Warehouse",
+   "type": "DocType"
+  },
+  {
+   "color": "Gray",
+   "doc_view": "List",
+   "label": "Companies",
+   "link_to": "Company",
+   "type": "DocType"
+  },
+  {
+   "color": "Teal",
+   "doc_view": "List",
+   "label": "Audiograms",
+   "link_to": "Audiogramme",
+   "type": "DocType"
+  },
+  {
+   "color": "Teal",
+   "doc_view": "List",
+   "label": "Patients",
+   "link_to": "Customer",
+   "type": "DocType"
+  },
+  {
+   "color": "Red",
+   "doc_view": "List",
+   "label": "Users",
+   "link_to": "User",
+   "type": "DocType"
+  },
+  {
+   "color": "Red",
+   "doc_view": "List",
+   "label": "Roles",
+   "link_to": "Role",
    "type": "DocType"
   }
  ],
  "title": "Odyio Marketplace"
 }
-
